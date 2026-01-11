@@ -1,11 +1,9 @@
 // ==UserScript==
 // @name         Capture Swords & Ravens Data
-// @namespace    http://tampermonkey.net/
-// @version      2025-12-03
+// @version      2026-1-11
 // @description  Capture Game Data
-// @author       You
-// @match        http://127.0.0.1:5500/test.html
-// @grant        none
+// @match        https://swordsandravens.net/play/*
+// @require      file://C:/Users/WUlri/Nextcloud/Projects/Screenscraping/injectionScript.js
 // ==/UserScript==
 import { extractGameData } from "./ExtractGameData";
 (function () {
