@@ -5,7 +5,8 @@
 // @match        https://swordsandravens.net/play/*
 // @require      file://C:/Users/WUlri/Nextcloud/Projects/Screenscraping/injectionScript.js
 // ==/UserScript==
-import { extractGameData } from "./ExtractGameData";
+import { DownloadData } from "../Modules/DownloadData";
+import { extractGameData } from "../Modules/ExtractGameData";
 (function () {
     console.log("Tampermonkey: Injection attempting to attach to process");
     const checkInterval = setInterval(() => {
@@ -18,10 +19,9 @@ import { extractGameData } from "./ExtractGameData";
                 const originalFunction = originalOnMessage.apply(this, arguments);
                 try {
                     console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame.name} ---`);
-                    // console.log(this)
                     const GameState = gameClient.entireGame.childGameState;
                     const GameLogs = GameState.gameLogManager.logs;
-                    console.log(extractGameData(GameLogs));
+                    DownloadData(extractGameData(GameLogs), "It works!");
                 }
                 catch (error) {
                     console.error("Tampermonkey Hook Error:", error);

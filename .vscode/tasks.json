@@ -4,9 +4,20 @@
     "version": "2.0.0",
     "tasks": [
       {
+        "label": "Bundle JavaScript",
+        "type": "shell",
+        "command": "powershell -NoExit -File ${workspaceFolder}\\Tools\\watchJavaScript.ps1",
+        "isBackground": true,
+        "presentation": 
+        {
+          "reveal": "silent",
+          "panel": "dedicated",
+        },
+      },
+      {
         "label": "Watch Typescript",
         "type": "shell",
-        "command": "powershell -NoExit -File ${workspaceFolder}\\watch.ps1",
+        "command": "powershell -NoExit -File ${workspaceFolder}\\Tools\\compileTypescript.ps1",
         "isBackground": true,
         "presentation": 
         {
@@ -17,7 +28,7 @@
       {
         "label": "Serve Injection Script",
         "type": "shell",
-        "command": "powershell -NoExit -File ${workspaceFolder}\\host.ps1",
+        "command": "powershell -NoExit -File ${workspaceFolder}\\Tools\\serveBundle.ps1",
         "isBackground": true,
         "presentation": 
         {

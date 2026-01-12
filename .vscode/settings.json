@@ -13,5 +13,6 @@
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
         "*.ts": "${capture}.d.ts, ${capture}.js, ${capture}.js.map"
-    }
+    },
+    "liveServer.settings.port": 5501
 }

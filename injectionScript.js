@@ -1,5 +1,19 @@
 (() => {
-  // InjectScript/Stats.ts
+  // Scripts/Modules/DownloadData.ts
+  var DownloadData = (data, downloadFileBaseName, override = false) => {
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = downloadFileBaseName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Scripts/Utilities/Stats.ts
   var determineProbabilityMassDistribution = (dataArray, numberAccessor) => {
     const sampleSize = dataArray.length;
     if (sampleSize === 0) return {};
@@ -15,9 +29,8 @@
     return distribution;
   };
 
-  // InjectScript/ExtractGameData.ts
-  var extractGameData = (logs) => {
-    const logData = logs.map((log) => log.data);
+  // Scripts/Modules/Bidding.ts
+  var BiddingTracker = (logData) => {
     const bidsData = logData.filter(
       (log) => log.type == "clash-of-kings-bidding-done" && log.distributor === null
       // No Targs
@@ -56,7 +69,13 @@
     2: "King's Court"
   };
 
-  // InjectScript/InjectScript.js
+  // Scripts/Modules/ExtractGameData.ts
+  var extractGameData = (logs) => {
+    const logData = logs.map((log) => log.data);
+    const Trackers = [BiddingTracker]();
+  };
+
+  // Scripts/InjectScript/InjectScript.js
   (function() {
     console.log("Tampermonkey: Injection attempting to attach to process");
     const checkInterval = setInterval(() => {
@@ -71,7 +90,7 @@
             console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame.name} ---`);
             const GameState = gameClient.entireGame.childGameState;
             const GameLogs = GameState.gameLogManager.logs;
-            console.log(extractGameData(GameLogs));
+            DownloadData(extractGameData(GameLogs), "It works!");
           } catch (error) {
             console.error("Tampermonkey Hook Error:", error);
           }

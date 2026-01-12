@@ -1,9 +1,8 @@
-import { BidTracks, ClashOfKingsBiddingDone, CleanBiddingData, Factions, GameLog } from "../ScrapedData/GameTypes";
-import { determineProbabilityMassDistribution } from "./Stats";
+import { BidTracks, ClashOfKingsBiddingDone, CleanBiddingData, Factions, GameLogData } from "../../ScrapedData/GameTypes";
+import { IGameDataExtractor } from "../Contracts/ExtractionContracts";
+import { determineProbabilityMassDistribution } from "../Utilities/Stats";
 
-export const extractGameData = (logs : GameLog[]) => {
-    const logData = logs.map((log)=>log.data)
-
+export const BiddingTracker : IGameDataExtractor<ExtractedBidData> = (logData : GameLogData[]) => {
     const bidsData : ClashOfKingsBiddingDone[] = logData.filter(
     (log)=>log.type == "clash-of-kings-bidding-done" && 
             log.distributor === null // No Targs
@@ -45,6 +44,13 @@ export const extractGameData = (logs : GameLog[]) => {
     }
 }
 
+type ExtractedBidData = {
+    "Bids" : CleanBiddingData[],
+    "Iron Throne Distribution" : {[key: number]: number},
+    "Fiefdom Distribution" : {[key: number]: number},
+    "King's Court Distribution" : {[key: number]: number},
+    "Average Bid": number
+}
 
 const tracksMapping : {[key: number]: BidTracks} = {
     0: "Iron Throne",

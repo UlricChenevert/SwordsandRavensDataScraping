@@ -1,0 +1,1 @@
+// Coin / Power token, land size,

@@ -1,0 +1,1 @@
+.\node_modules\.bin\esbuild .\Scripts\InjectScript\InjectScript.js --bundle --outfile=injectionScript.js

@@ -14,7 +14,7 @@ export const determineConfidenceInterval = (sampleAverage : number, standardDevi
         return {UpperBound: UpperBound, LowerBound: LowerBound}
     }
 
-export const determineProbabilityMassDistribution = (dataArray, numberAccessor) => {
+export const determineProbabilityMassDistribution = (dataArray, numberAccessor): {[key: number]: number} => {
     const sampleSize = dataArray.length;
     if (sampleSize === 0) return {};
 

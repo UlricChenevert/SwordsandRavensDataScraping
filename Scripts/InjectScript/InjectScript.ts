@@ -6,7 +6,9 @@
 // @require      file://C:/Users/WUlri/Nextcloud/Projects/Screenscraping/injectionScript.js
 // ==/UserScript==
 
-import { extractGameData } from "./ExtractGameData";
+import { BiddingTracker } from "../Modules/Bidding";
+import { DownloadData } from "../Modules/DownloadData";
+import { extractGameData } from "../Modules/ExtractGameData";
 
 (function() {
     console.log("Tampermonkey: Injection attempting to attach to process")
@@ -26,12 +28,10 @@ import { extractGameData } from "./ExtractGameData";
                 
                 try {
                     console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame.name} ---`);
-                    // console.log(this)
-
                     const GameState = gameClient.entireGame.childGameState
                     const GameLogs = GameState.gameLogManager.logs
                     
-                    console.log(extractGameData(GameLogs))
+                    DownloadData(extractGameData(GameLogs, [BiddingTracker]), "It works!")
                     
                 } catch (error) {
                     console.error("Tampermonkey Hook Error:", error);
@@ -42,4 +42,5 @@ import { extractGameData } from "./ExtractGameData";
             
         }
     }, 100); // Check every half second
-})();
+}
+)();

@@ -1,6 +1,5 @@
-import { determineProbabilityMassDistribution } from "./Stats";
-export const extractGameData = (logs) => {
-    const logData = logs.map((log) => log.data);
+import { determineProbabilityMassDistribution } from "../Utilities/Stats";
+export const BiddingTracker = (logData) => {
     const bidsData = logData.filter((log) => log.type == "clash-of-kings-bidding-done" &&
         log.distributor === null // No Targs
     );
@@ -37,4 +36,4 @@ const tracksMapping = {
     1: "Fiefdom",
     2: "King's Court"
 };
-//# sourceMappingURL=ExtractGameData.js.map
+//# sourceMappingURL=Bidding.js.map

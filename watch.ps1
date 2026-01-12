@@ -1,1 +1,0 @@
-nodemon --watch "./**/*.ts" --exec "powershell -File ./build.ps1"
