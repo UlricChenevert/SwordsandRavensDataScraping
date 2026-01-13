@@ -13,71 +13,119 @@
     URL.revokeObjectURL(url);
   };
 
-  // Scripts/Utilities/Stats.ts
-  var determineProbabilityMassDistribution = (dataArray, numberAccessor) => {
-    const sampleSize = dataArray.length;
-    if (sampleSize === 0) return {};
-    const rawCounts = {};
-    const distribution = {};
-    dataArray.forEach((element) => {
-      const number = numberAccessor(element);
-      rawCounts[number] = (rawCounts[number] || 0) + 1;
-    });
-    for (const bidAmount in rawCounts) {
-      distribution[bidAmount] = rawCounts[bidAmount] / sampleSize;
-    }
-    return distribution;
-  };
-
-  // Scripts/Modules/Bidding.ts
-  var BiddingTracker = (logData) => {
-    const bidsData = logData.filter(
-      (log) => log.type == "clash-of-kings-bidding-done" && log.distributor === null
-      // No Targs
-    );
-    const bids = [];
-    bidsData.forEach((bidInstance) => {
-      bidInstance.results.forEach((bidAmountInstance) => {
-        bidAmountInstance[1].forEach((factionBidInstance) => {
-          bids.push({
-            "Track": tracksMapping[bidInstance.trackerI],
-            "Amount": bidAmountInstance[0],
-            "Faction": factionBidInstance
-          });
-        });
-      });
-    });
-    const AverageBid = 0;
-    const ironThroneData = bids.filter((bidData) => bidData.Track == "Iron Throne");
-    const fiefdomData = bids.filter((bidData) => bidData.Track == "Fiefdom");
-    const kingsCourtData = bids.filter((bidData) => bidData.Track == "King's Court");
-    const bidDataAccessor = (element) => element.Amount;
-    const ironThroneDistribution = determineProbabilityMassDistribution(ironThroneData, bidDataAccessor);
-    const fiefdomDistribution = determineProbabilityMassDistribution(fiefdomData, bidDataAccessor);
-    const kingsCourtDistribution = determineProbabilityMassDistribution(kingsCourtData, bidDataAccessor);
-    return {
-      "Bids": bids,
-      "Iron Throne Distribution": ironThroneDistribution,
-      "Fiefdom Distribution": fiefdomDistribution,
-      "King's Court Distribution": kingsCourtDistribution,
-      "Average Bid": AverageBid
-    };
-  };
+  // ScrapedData/GameConstants.ts
   var tracksMapping = {
     0: "Iron Throne",
     1: "Fiefdom",
     2: "King's Court"
   };
 
+  // Scripts/Modules/BiddingExtraction.ts
+  var extractBidData = (logData) => {
+    const trackBidsData = logData.filter(
+      (log) => log.type == "clash-of-kings-bidding-done" && log.distributor === null
+      // No Targs
+    );
+    const trackBids = [];
+    trackBidsData.forEach((bidInstance) => {
+      bidInstance.results.forEach((bidAmountInstance) => {
+        bidAmountInstance[1].forEach((factionBidInstance) => {
+          trackBids.push({
+            Track: tracksMapping[bidInstance.trackerI],
+            Amount: bidAmountInstance[0],
+            Faction: factionBidInstance
+          });
+        });
+      });
+    });
+    const wildlingBidData = logData.filter((log) => log.type == "wildling-bidding");
+    const wildlingBids = [];
+    wildlingBidData.forEach((bidInstance) => {
+      bidInstance.results.forEach((bidAmountInstance) => {
+        bidAmountInstance[1].forEach((factionBidInstance) => {
+          wildlingBids.push({
+            Amount: bidAmountInstance[0],
+            Faction: factionBidInstance
+          });
+        });
+      });
+    });
+    return { TrackBids: trackBids, WildlingBids: wildlingBids };
+  };
+
+  // Scripts/Modules/MilitaryExtraction.ts
+  var extractBattleStats = (combatLogs) => {
+    return combatLogs.map((combat, index) => {
+      const winner = combat.stats.find((s) => s.isWinner);
+      const loser = combat.stats.find((s) => !s.isWinner);
+      return {
+        region: winner?.region || "unknown",
+        winner: winner?.house || "unknown",
+        loser: loser?.house || "unknown",
+        winnerArmy: winner?.army || 0,
+        loserArmy: loser?.army || 0,
+        winnerHouseCard: winner?.houseCard || null,
+        loserHouseCard: loser?.houseCard || null,
+        support: (winner?.support || 0) + (loser?.support || 0),
+        location: winner?.region || "unknown",
+        timestamp: index
+      };
+    });
+  };
+  var extractMilitaryData = (logData) => {
+    const combatLogs = logData.filter((log) => log.type === "combat-result");
+    const attackLogs = logData.filter((log) => log.type === "attack");
+    const commonBattleStats = extractBattleStats(combatLogs);
+    return {
+      commonBattleStats,
+      combatLogs,
+      attackLogs
+    };
+  };
+
+  // Scripts/Modules/PlayerExtraction.ts
+  var extractPlayerData = (client) => {
+    const GameState = client.entireGame.childGameState;
+    const finalPlayerList = [];
+    GameState.players.forEach((playerEntry) => {
+      const finalPlayerData = {
+        playerID: playerEntry.user.id,
+        playerName: playerEntry.user.name
+      };
+      finalPlayerList.push(finalPlayerData);
+    });
+    return { Players: finalPlayerList };
+  };
+
   // Scripts/Modules/ExtractGameData.ts
-  var extractGameData = (logs) => {
+  var extractGameData = (GameClient) => {
+    const GameState = GameClient.entireGame.childGameState;
+    const GameLogs = GameState.gameLogManager.logs;
+    const extractedData = {};
+    Object.assign(extractedData, extractLogData(GameLogs, [extractBidData, extractMilitaryData]));
+    Object.assign(extractedData, extractMiscData(GameClient, [extractPlayerData]));
+    return extractedData;
+  };
+  var extractLogData = (logs, Extractors) => {
     const logData = logs.map((log) => log.data);
-    const Trackers = [BiddingTracker]();
+    const finalObject = {};
+    Extractors.forEach((trackerLambda) => {
+      Object.assign(finalObject, trackerLambda(logData));
+    });
+    return finalObject;
+  };
+  var extractMiscData = (GameClient, Extractors) => {
+    const finalObject = {};
+    Extractors.forEach((extractionLambda) => {
+      Object.assign(finalObject, extractionLambda(GameClient));
+    });
+    return finalObject;
   };
 
   // Scripts/InjectScript/InjectScript.js
   (function() {
     console.log("Tampermonkey: Injection attempting to attach to process");
+    let downloadedData = false;
     const checkInterval = setInterval(() => {
       if (window.gameClient) {
         clearInterval(checkInterval);
@@ -86,13 +134,17 @@
         const originalOnMessage = gameClient.onMessage;
         gameClient.onMessage = function() {
           const originalFunction = originalOnMessage.apply(this, arguments);
-          try {
-            console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame.name} ---`);
-            const GameState = gameClient.entireGame.childGameState;
-            const GameLogs = GameState.gameLogManager.logs;
-            DownloadData(extractGameData(GameLogs), "It works!");
-          } catch (error) {
-            console.error("Tampermonkey Hook Error:", error);
+          if (!downloadedData) {
+            try {
+              console.log(`--- EXTRACTING GAME STATE FOR ${gameClient.entireGame.name} ---`);
+              const extractedData = extractGameData(gameClient);
+              console.log(extractedData);
+              DownloadData({ [gameClient.authData.gameId]: extractedData }, "GameOfThronesGameData");
+              console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame.name} ---`);
+              downloadedData = true;
+            } catch (error) {
+              console.error("Tampermonkey Hook Error:", error);
+            }
           }
           return originalFunction;
         };

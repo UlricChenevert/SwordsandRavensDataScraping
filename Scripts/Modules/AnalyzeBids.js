@@ -1,21 +1,5 @@
 import { determineProbabilityMassDistribution } from "../Utilities/Stats";
-export const BiddingTracker = (logData) => {
-    const bidsData = logData.filter((log) => log.type == "clash-of-kings-bidding-done" &&
-        log.distributor === null // No Targs
-    );
-    const bids = [];
-    bidsData.forEach((bidInstance) => {
-        bidInstance.results.forEach((bidAmountInstance) => {
-            bidAmountInstance[1].forEach((factionBidInstance) => {
-                bids.push({
-                    "Track": tracksMapping[bidInstance.trackerI],
-                    "Amount": bidAmountInstance[0],
-                    "Faction": factionBidInstance
-                });
-            });
-        });
-    });
-    const AverageBid = 0;
+export const analyzeBidDistributions = (bids) => {
     const ironThroneData = bids.filter((bidData) => bidData.Track == "Iron Throne");
     const fiefdomData = bids.filter((bidData) => bidData.Track == "Fiefdom");
     const kingsCourtData = bids.filter((bidData) => bidData.Track == "King's Court");
@@ -23,17 +7,14 @@ export const BiddingTracker = (logData) => {
     const ironThroneDistribution = determineProbabilityMassDistribution(ironThroneData, bidDataAccessor);
     const fiefdomDistribution = determineProbabilityMassDistribution(fiefdomData, bidDataAccessor);
     const kingsCourtDistribution = determineProbabilityMassDistribution(kingsCourtData, bidDataAccessor);
+    const averageBid = bids.length > 0
+        ? bids.reduce((sum, bid) => sum + bid.Amount, 0) / bids.length
+        : 0;
     return {
-        "Bids": bids,
         "Iron Throne Distribution": ironThroneDistribution,
         "Fiefdom Distribution": fiefdomDistribution,
         "King's Court Distribution": kingsCourtDistribution,
-        "Average Bid": AverageBid
+        "Average Bid": averageBid,
     };
 };
-const tracksMapping = {
-    0: "Iron Throne",
-    1: "Fiefdom",
-    2: "King's Court"
-};
-//# sourceMappingURL=Bidding.js.map
+//# sourceMappingURL=AnalyzeBids.js.map

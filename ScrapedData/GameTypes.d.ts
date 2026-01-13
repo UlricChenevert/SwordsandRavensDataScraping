@@ -81,7 +81,7 @@ interface IRegionSnapshot {
   order?: { type: string; restricted?: boolean };
 }
 
-import { PlayerActionType, ReplacementReason } from "./GameConstants";
+import { ConnectionState, PlayerActionType, ReplacementReason } from "./GameConstants";
 
 interface GameLog {
   time: Date;
@@ -1536,4 +1536,355 @@ interface LastLandUnitTransformedToDragon {
 interface LivePbemSwitch {
   type: "live-pbem-switch";
   isNowPbem: boolean;
+}
+
+// ===== GAME CLIENT TYPES =====
+
+
+
+interface AuthData {
+  userId: string;
+  requestUserId: string;
+  gameId: string;
+  authToken: string;
+}
+
+interface LiveClockData {
+  remainingSeconds: number;
+  timerStartedAt: Date | null;
+  serverTimer: unknown | null;
+}
+
+interface GameClient {
+  socket: WebSocket | null;
+  authData: AuthData;
+  connectionState: ConnectionState;
+  entireGame: EntireGame | null;
+  authenticated: boolean;
+  authenticatedUser: any; // User type from server
+  isReconnecting: boolean;
+  pingInterval: number;
+  start(): void;
+  onMessage(data: string): void;
+  send(message: any): void;
+  onOpen(): void;
+  onClose(): void;
+  onError(): void;
+  reconnect(): void;
+  clearPingInterval(): void;
+  doesControlHouse(house: any): boolean;
+  canActAsOwner(): boolean;
+  isRealOwner(): boolean;
+  isOwnTurn(): boolean;
+  isAuthenticatedUser(user: any): boolean;
+  setDisconnectedState(): void;
+}
+
+interface IngameGameState {
+  parentGameState: EntireGame;
+  childGameState: any;
+  players: Map<any, Player>;
+  oldPlayerIds: string[];
+  replacerIds: string[];
+  timeoutPlayerIds: string[];
+  housesTimedOut: House[];
+  game: Game;
+  gameLogManager: GameLogManager;
+  ordersOnBoard: Map<Region, Order>;
+  visibleRegionsPerPlayer: Map<Player, Region[]>;
+  publicVisibleRegions: Region[];
+  unitVisibilityRangeModifier: number;
+  votes: Map<string, any>;
+  paused: Date | null;
+  willBeAutoResumedAt: Date | null;
+  bannedUsers: Set<string>;
+  childGameStateBeforeCancellation: any;
+  childGameStateBeforeVassalsModification: any;
+  vassalizedHouses: House[];
+  rerender: number;
+  marchMarkers: Map<Unit, Region>;
+  unitsToBeAnimated: Map<Unit, any>;
+  ordersToBeAnimated: Map<Region, any>;
+  onVoteStarted: (() => void) | null;
+  onLogReceived: ((log: GameLogData) => void) | null;
+  onGamePaused: (() => void) | null;
+  onGameResumed: (() => void) | null;
+  onPreemptiveRaidNewAttack: ((biddings: [number, House[]][], highestBidder: House) => void) | null;
+  entireGame: EntireGame;
+  world: World;
+  actionState: any;
+  sortedByLeadingPlayers: Player[];
+  isEnded: boolean;
+  isCancelled: boolean;
+  isEndedOrCancelled: boolean;
+  fogOfWar: boolean;
+  beginGame(housesToCreate: string[], futurePlayers: Map<string, any>): void;
+  assignNewFacelessNames(): void;
+  proceedWithChooseObjectives(): void;
+  onDraftGameStateEnd(): void;
+  onChooseInitialObjectivesGameStateEnd(): void;
+  setInfluenceTrack(i: number, track: House[]): House[];
+  getFixedInfluenceTrack(track: House[]): House[];
+  log(data: GameLogData, resolvedAutomatically?: boolean): void;
+  onActionGameStateFinish(): void;
+  onWesterosGameStateFinish(planningRestrictions: any[], revealedWesterosCards: any[]): void;
+  proceedPlanningGameState(planningRestrictions?: any[], revealedWesterosCards?: any[]): void;
+  proceedToActionGameState(placedOrders: Map<Region, Order>, planningRestrictions: any[]): void;
+  beginNewRound(): void;
+  onPayDebtsGameStateFinish(): void;
+  gainLoyaltyTokens(): void;
+  getFreeFacelessName(): string | null;
+  cancelPendingReplaceVotes(): void;
+  onClientMessage(user: any, message: any): boolean;
+  onPlayerMessage(player: Player, message: any): void;
+  setWaitedForPlayers(previouslyWaitedFor: Player[]): void;
+  resetAllWaitedForData(): void;
+  checkWaitedForPlayers(): Player[];
+  createVote(initiator: any, type: any): any;
+  safeGetControllerOfHouse(house: House): Player | null;
+  getControllerOfHouse(house: House): Player;
+  getNextInTurnOrder(house: House | null, except?: House | null): House;
+  getNextNonVassalInTurnOrder(house: House | null): House;
+  calculatePossibleGainsForGameOfThrones(): Map<House, number>;
+  assumeChangePowerTokens(house: House, delta: number): number;
+  changePowerTokens(house: House, delta: number): number;
+  transformUnits(region: Region, units: Unit[], targetType: any): Unit[];
+  checkVictoryConditions(isCheckAtEndOfRound?: boolean): boolean;
+  onPlayerClockTimeout(player: Player): void;
+  endPlayerClock(player: Player, clearTimer?: boolean): void;
+  resumeGame(byVote?: boolean): void;
+  applyAverageOfRemainingClocksToNewPlayer(newPlayer: Player, oldPlayer: Player | null): void;
+  replacePlayerByVassal(player: Player, reason: any): void;
+  proceedWithClaimVassals(forbiddenRelation?: [House | null, House] | null): void;
+  onClaimVassalsFinished(): void;
+  processPossibleConsequencesOfUnitLossAndCheckWinningConditions(): any;
+  onServerMessage(message: any): void;
+  broadcastAddUnits(region: Region, units: Unit[], isTransform?: boolean): void;
+  broadcastRemoveUnits(region: Region, units: Unit[], animate?: boolean): void;
+  sendMessageToUsersWhoCanSeeRegion(message: any, region: Region, ...exceptTo: any[]): void;
+  updateVisibleRegions(hideNonVisibleAreas?: boolean): void;
+  getVisibleRegionsForPlayer(player: Player | null): Region[];
+  calculateVisibilityRangeForRegion(region: Region): number;
+  calculateVisibleRegionsForPlayer(player: Player | null): Region[];
+  calculateRequiredVisibleRegionsForPlayer(player: Player): Region[];
+  addPublicVisibleRegions(...regions: Region[]): void;
+  forceRerender(): void;
+  launchCancelGameVote(): void;
+  launchEndGameVote(): void;
+  launchPauseGameVote(): void;
+  launchResumeGameVote(): void;
+  launchExtendPlayerClocksVote(): void;
+  launchReplacePlayerVote(player: Player): void;
+  launchReplacePlayerByVassalVote(player: Player): void;
+  launchReplaceVassalByPlayerVote(house: House): void;
+  launchSwapHousesVote(player: Player): void;
+  launchDeclareWinnerVote(winner: House): void;
+  getVassalHouses(): House[];
+  isVassalControlledByPlayer(vassal: House, player: Player): boolean;
+  getVassalsControlledByPlayer(player: Player): House[];
+  getControlledHouses(player: Player): House[];
+  getNonClaimedVassalHouses(): House[];
+  isVassalHouse(house: House): boolean;
+  getOtherVassalFamilyHouses(house: House): (House | null)[];
+  getTurnOrderWithoutVassals(): House[];
+  broadcastObjectives(): void;
+  broadcastVassalRelations(): void;
+  broadcastWesterosDecks(): void;
+  canGiftPowerTokens(house: House): boolean;
+  getWorldSnapshotWithOrdersOnBoard(planningRestrictions?: any[]): any[];
+  serializeToClient(admin: boolean, user: any | null): any;
+  isHouseDefeated(house: House | null): boolean;
+  canLaunchCancelGameVote(player: Player | null): { result: boolean; reason: string };
+  canLaunchEndGameVote(player: Player | null): { result: boolean; reason: string };
+  canLaunchPauseGameVote(player: Player | null): { result: boolean; reason: string };
+  canLaunchResumeGameVote(player: Player | null): { result: boolean; reason: string };
+  canLaunchExtendPlayerClocksVote(player: Player | null): { result: boolean; reason: string };
+  canLaunchReplacePlayerVote(fromUser: any | null, replaceWithVassal?: boolean, forHouse?: House | null): { result: boolean; reason: string };
+  canLaunchSwapHousesVote(initiator: any | null, swappingPlayer: Player): { result: boolean; reason: string };
+  canLaunchDeclareWinnerVote(initiator: any | null): { result: boolean; reason: string };
+  canLaunchReplaceVassalVote(fromUser: any | null, forHouse: House): { result: boolean; reason: string };
+}
+
+interface GameLogManager {
+  ingameGameState: IngameGameState;
+  logs: GameLog[];
+  lastSeenLogTimes: Map<any, number>;
+  log(data: GameLogData, resolvedAutomatically?: boolean): void;
+  sendGameLogSeen(time: number): void;
+  serializeToClient(admin: boolean, user: any | null): any;
+}
+
+interface Player {
+  user: User;
+  house: House;
+  liveClockData: LiveClockData | null;
+  waitedForData: any;
+  serializeToClient(): any;
+}
+
+interface House {
+  id: string;
+  name: string;
+  powerTokens: number;
+  maxPowerTokens: number;
+  victoryPoints: number;
+  supplyLevel: number;
+  houseCards: Map<string, any>;
+  knowsNextWildlingCard: boolean;
+  hasBeenReplacedByVassal: boolean;
+  completedObjectives: any[];
+  secretObjectives: any[];
+  laterHouseCards: any[] | null;
+}
+
+interface Region {
+  id: string;
+  name: string;
+  crownIcons: number;
+  castleLevel: number;
+  garrison: number;
+  controlPowerToken: House | null;
+  loyaltyTokens: number;
+  castleModifier: number;
+  crownModifier: number;
+  barrelModifier: number;
+  units: Map<string, Unit>;
+  getController(): House | null;
+  serializeToClient(showUnits: boolean, player: Player | null): any;
+}
+
+interface Unit {
+  id: string;
+  type: any;
+  region: Region;
+  allegiance: House;
+  wounded: boolean;
+  serializeToClient(): any;
+}
+
+interface Order {
+  id: number;
+  type: any;
+}
+
+interface Game {
+  turn: number;
+  maxTurns: number;
+  houses: Map<string, House>;
+  world: World;
+  ironThroneTrack: House[];
+  fiefdomsTrack: House[];
+  kingsCourtTrack: House[];
+  targaryen: House | null;
+  valyrianSteelBladeUsed: boolean;
+  westerosDecks: any[][];
+  wildlingDeck: any[];
+  wildlingStrength: number;
+  ironBank: any;
+  nonVassalHouses: House[];
+  supplyRestrictions: number[];
+  vassalRelations: Map<House, House>;
+  oldPlayerHouseCards: Map<House, Map<string, any>>;
+  previousPlayerHouseCards: Map<House, Map<string, any>>;
+  deletedHouseCards: Map<string, any>;
+  draftPool: Map<string, any>;
+  revealedWesterosCards: number;
+  winterIsComingHappened: boolean[];
+  clientNextWildlingCardId: string | null;
+  dragonStrengthTokens: number[];
+  removedDragonStrengthTokens: number[];
+  usurper: House | null;
+  serializeToClient(admin: boolean, player: Player | null): any;
+  getPotentialWinners(): House[];
+  getPotentialWinner(): House;
+  getSnapshot(): any;
+  getTurnOrder(): House[];
+  areVictoryConditionsFulfilled(): boolean;
+  countPowerTokensOnBoard(house: House): number;
+  getControlledSupplyIcons(house: House): number;
+  getHouseCardById(id: string): any;
+  getAllHouseCardsInGame(): Map<string, any>;
+  isOrderRestricted(region: Region, order: Order, planningRestrictions: any[]): boolean;
+  createUnit(region: Region, type: any, allegiance: House): Unit;
+}
+
+interface World {
+  regions: Map<string, Region>;
+  regionsThatRegainGarrison: any[];
+  getNeighbouringRegions(region: Region): Region[];
+  getAdjacentSeaOfPort(region: Region): Region;
+  getAdjacentPortOfCastle(region: Region): Region | null;
+  getAllRegionsWithControllers(): [Region, House | null][];
+  getUnitsOfHouse(house: House): Unit[];
+  getRegion(staticRegion: any): Region;
+  getSnapshot(): any;
+}
+
+interface EntireGame {
+  id: string;
+  name: string;
+  childGameState: IngameGameState; // | any
+  users: Map<string, any>;
+  gameSettings: any;
+  publicChatRoomId: string;
+  privateChatRoomIds: Map<any, Map<any, string>>;
+  leafStateId: string;
+  minPlayerCount: number;
+  maxPlayerCount: number;
+  isFeastForCrows: boolean;
+  isDanceWithMotherOfDragons: boolean;
+  onSendClientMessage: ((message: any) => void) | null;
+  onNewPrivateChatRoomCreated: ((roomId: string) => void) | null;
+  onGetUser: ((userId: string) => Promise<any>) | null;
+  onCaptureSentryMessage: ((message: string, level: string) => void) | null;
+  broadcastToClients(message: any, ...exceptTo: any[]): void;
+  sendMessageToClients(users: any[], message: any): void;
+  sendMessageToServer(message: any): void;
+  onServerMessage(message: any): void;
+  canActAsOwner(user: any): boolean;
+  isRealOwner(user: any): boolean;
+  getPrivateChatRoomsOf(user: any): any[];
+  getWaitedUsers(): any[];
+  checkGameStateChanged(): void;
+  doPlayerClocksHandling(): void;
+  saveGame(updateLastActive: boolean): void;
+  hideOrRevealUserNames(hide: boolean): void;
+  serializeToClient(admin: boolean, user: any | null): any;
+}
+
+interface User {
+  id: string;
+  name: string;
+  facelessName: string;
+  settings: UserSettings;
+  entireGame: EntireGame;
+  connectedClients: WebSocket[];
+  otherUsersFromSameNetwork: Set<string>;
+  connected: boolean;
+  note: string;
+  onConnectionStateChanged: ((user: User) => void) | null;
+  send(message: any): void;
+  syncSettings(): void;
+  updateConnectionStatus(): void;
+  serializeToClient(admin: boolean, user: User | null, hideUserName: boolean): SerializedUser;
+}
+
+interface UserSettings {
+  chatHouseNames: boolean;
+  mapScrollbar: boolean;
+  muted: boolean;
+  gameStateColumnRight: boolean;
+  musicVolume: number;
+  notificationsVolume: number;
+  sfxVolume: number;
+}
+
+interface SerializedUser {
+  id: string;
+  name: string;
+  facelessName: string;
+  settings?: UserSettings;
+  connected: boolean;
+  otherUsersFromSameNetwork: string[];
+  note: string;
 }

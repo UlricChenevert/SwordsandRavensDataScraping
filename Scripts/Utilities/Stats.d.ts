@@ -5,5 +5,7 @@ export declare const determineConfidenceInterval: (sampleAverage: number, standa
     UpperBound: number;
     LowerBound: number;
 };
-export declare const determineProbabilityMassDistribution: (dataArray: any, numberAccessor: any) => {};
+export declare const determineProbabilityMassDistribution: (dataArray: any, numberAccessor: any) => {
+    [key: number]: number;
+};
 //# sourceMappingURL=Stats.d.ts.map
