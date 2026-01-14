@@ -36,5 +36,16 @@
           "panel": "dedicated",
         },
       },
+      {
+        "label": "Run Analysis",
+        "type": "shell",
+        "command": "powershell -NoExit -File ${workspaceFolder}\\Tools\\runAnalysis.ps1",
+        "isBackground": false,
+        "presentation": 
+        {
+          "reveal": "always",
+          "panel": "dedicated",
+        },
+      },
     ]
   }

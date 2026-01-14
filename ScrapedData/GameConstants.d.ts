@@ -1,4 +1,4 @@
-import { BidTracks } from "./GameTypes";
+import { BidTracks } from "./GameTypes.js";
 export declare const enum ReplacementReason {
     VOTE = 0,
     CLOCK_TIMEOUT = 1

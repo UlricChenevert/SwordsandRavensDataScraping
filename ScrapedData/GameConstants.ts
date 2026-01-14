@@ -1,4 +1,4 @@
-import { BidTracks } from "./GameTypes";
+import { BidTracks } from "./GameTypes.js";
 
 export const enum ReplacementReason {
   VOTE,
@@ -29,6 +29,7 @@ export enum ConnectionState {
   SYNCED = 3,
   CLOSED = 4,
 }
+
 
 export const defaultUserSettings = {
   chatHouseNames: false,

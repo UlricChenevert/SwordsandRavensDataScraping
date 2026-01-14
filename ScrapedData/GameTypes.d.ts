@@ -1,21 +1,8 @@
-// interface SerializedEntireGame {
-//   id: string;
-//   name: string;
-//   users: SerializedUser[];
-//   ownerUserId: string;
-//   childGameState:
-//     | SerializedLobbyGameState
-//     | SerializedIngameGameState
-//     | SerializedCancelledGameState;
-//   publicChatRoomId: string;
-//   privateChatRoomIds: [string, [string, string][]][];
-//   gameSettings: SerializedGameSettings;
-//   leafStateId: string;
-//   multiAccountProtectionMap: [string, string[]][];
-// }
+import { ConnectionState, HouseCardState, PlayerActionType, ReplacementReason } from "./GameConstants.js";
+
 
 interface CombatStats {
-  house: string;
+  house: Factions;
   region: string;
   army: number;
   armyUnits: string[];
@@ -31,33 +18,33 @@ interface CombatStats {
   isWinner: boolean;
 }
 
-interface IHouseSnapshot {
-  id: string;
-  victoryPoints: number;
-  landAreaCount: number;
-  supply: number;
-  houseCards: {
-    id: string;
-    state: any;
-  }[];
-  powerTokens: number;
-  isVassal?: boolean;
-  suzerainHouseId?: string;
-}
-
 interface IIronBankSnapshot {
   loanSlots: (string | null)[];
   interestCosts?: [string, number][];
   braavosController?: string;
 }
 
+interface IHouseSnapshot {
+  id: Factions;
+  victoryPoints: number;
+  landAreaCount: number;
+  supply: number;
+  houseCards: {
+    id: string;
+    state: HouseCardState;
+  }[];
+  powerTokens: number;
+  isVassal?: boolean;
+  suzerainHouseId?: string;
+}
+
 interface IGameSnapshot {
   round: number;
   wildlingStrength: number;
   dragonStrength?: number;
-  ironThroneTrack: string[];
-  fiefdomsTrack: string[];
-  kingsCourtTrack: string[];
+  ironThroneTrack: Factions[];
+  fiefdomsTrack: Factions[];
+  kingsCourtTrack: Factions[];
   housesOnVictoryTrack: IHouseSnapshot[];
   vsbUsed?: boolean;
   ironBank?: IIronBankSnapshot;
@@ -80,9 +67,6 @@ interface IRegionSnapshot {
   overwrittenSuperControlPowerToken?: string;
   order?: { type: string; restricted?: boolean };
 }
-
-import { ConnectionState, PlayerActionType, ReplacementReason } from "./GameConstants";
-
 interface GameLog {
   time: Date;
   data: GameLogData;
@@ -414,19 +398,19 @@ interface TurnBegin {
 
 interface SupportDeclared {
   type: "support-declared";
-  supporter: string;
-  supported: string | null;
+  supporter: Factions;
+  supported: Factions | null;
 }
 
 interface SupportRefused {
   type: "support-refused";
-  house: string;
+  house: Factions;
 }
 
 interface Attack {
   type: "attack";
-  attacker: string;
-  attacked: string | null;
+  attacker: Factions;
+  attacked: Factions | null;
   attackingRegion: string;
   attackedRegion: string;
   units: string[];
@@ -583,7 +567,8 @@ type Factions = "baratheon" | "tyrell" | "lannister" | "arryn" | "greyjoy" | "ta
 interface CleanBiddingData {
   "Track" : BidTracks, 
   "Amount": number, 
-  "Faction": Factions
+  "Faction": Factions,
+  Round : number
 }
 
 interface ClashOfKingsBiddingDone {

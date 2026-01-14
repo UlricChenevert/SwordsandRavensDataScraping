@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug TS with tsx",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "tsx",
+      "args": ["Scripts/AnalysisScript/AnalysisScript.ts"],
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

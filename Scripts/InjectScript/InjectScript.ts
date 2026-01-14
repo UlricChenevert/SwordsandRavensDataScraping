@@ -8,9 +8,9 @@
 // @require      http://localhost:3000/injectionScript.js
 // ==/UserScript==
 
-import { GameClient } from "../../ScrapedData/GameTypes";
-import { DownloadData } from "../Modules/DownloadData";
-import { extractGameData } from "../Modules/ExtractGameData";
+import { GameClient } from "../../ScrapedData/GameTypes.js";
+import { DownloadData } from "../Extraction Modules/DownloadData.js";
+import { extractGameData } from "../Extraction Modules/ExtractGameData.js";
 
 (function() {
     console.log("Tampermonkey: Injection attempting to attach to process")
@@ -50,6 +50,6 @@ import { extractGameData } from "../Modules/ExtractGameData";
             };
             
         }
-    }, 100); // Check every half second
+    }, 500); // Check every half second
 }
 )();

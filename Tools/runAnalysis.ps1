@@ -1,0 +1,1 @@
+tsx Scripts/AnalysisScript/AnalysisScript.ts
