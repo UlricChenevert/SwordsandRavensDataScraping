@@ -1,5 +1,6 @@
-import { determineProbabilityMassDistribution } from "../Utilities/Stats.js";
-export const analyzeBidDistributions = (bids) => {
+import { binomial, determineCDF, determineProbabilityMassDistribution, getProbabilityFromCDF } from "../Utilities/Stats.js";
+export const analyzeBidDistributions = (data) => {
+    const bids = Object.values(data)[0].TrackBids;
     const ironThroneData = bids.filter((bidData) => bidData.Track == "Iron Throne");
     const fiefdomData = bids.filter((bidData) => bidData.Track == "Fiefdom");
     const kingsCourtData = bids.filter((bidData) => bidData.Track == "King's Court");
@@ -12,9 +13,34 @@ export const analyzeBidDistributions = (bids) => {
         : 0;
     return {
         "Iron Throne Distribution": ironThroneDistribution,
+        "Iron Throne Bid Chart": determineBiddingPlacement(ironThroneDistribution),
         "Fiefdom Distribution": fiefdomDistribution,
+        "Fiefdom Bid Chart": determineBiddingPlacement(ironThroneDistribution),
         "King's Court Distribution": kingsCourtDistribution,
+        "King's Court Bid Chart": determineBiddingPlacement(ironThroneDistribution),
         "Average Bid": averageBid,
     };
+};
+const determineBiddingPlacement = (BidPartialMassDistribution, playerCount = 8, maxBid = 20) => {
+    const finalBidMatrix = [];
+    const CDF = determineCDF(BidPartialMassDistribution);
+    const numOpponents = playerCount - 1;
+    for (let bid = 0; bid < maxBid; bid++) {
+        const probability = getProbabilityFromCDF(bid, CDF);
+        const rankProbabilities = [];
+        // 2. Calculate probability for each possible rank (1st to Nth)
+        for (let numberOfOutbiddingPeople = 0; numberOfOutbiddingPeople <= numOpponents; numberOfOutbiddingPeople++) {
+            // k is the number of people who bid HIGHER than you
+            const probOfKAbove = binomial(numOpponents, numberOfOutbiddingPeople)
+                * Math.pow(1 - probability, numberOfOutbiddingPeople)
+                * Math.pow(probability, numOpponents - numberOfOutbiddingPeople);
+            rankProbabilities.push({
+                rank: numberOfOutbiddingPeople + 1,
+                probability: probOfKAbove
+            });
+        }
+        finalBidMatrix.push(rankProbabilities);
+    }
+    return finalBidMatrix;
 };
 //# sourceMappingURL=AnalyzeBids.js.map

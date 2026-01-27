@@ -1,4 +1,4 @@
-import { ConnectionState, HouseCardState, PlayerActionType, ReplacementReason } from "./GameConstants.js";
+import { ConnectionState, HouseCardState, PlayerActionType, possibleHouseCards, possibleLocations, ReplacementReason } from "./GameConstants.js";
 
 
 interface CombatStats {
@@ -10,7 +10,7 @@ interface CombatStats {
   orderBonus: number;
   support: number;
   garrison: number;
-  houseCard: string | null;
+  houseCard: HouseCard | null;
   houseCardStrength: number;
   valyrianSteelBlade: number;
   tidesOfBattleCard: string | null | undefined;
@@ -30,7 +30,7 @@ interface IHouseSnapshot {
   landAreaCount: number;
   supply: number;
   houseCards: {
-    id: string;
+    id: HouseCard;
     state: HouseCardState;
   }[];
   powerTokens: number;
@@ -411,8 +411,8 @@ interface Attack {
   type: "attack";
   attacker: Factions;
   attacked: Factions | null;
-  attackingRegion: string;
-  attackedRegion: string;
+  attackingRegion: GameLocation;
+  attackedRegion: GameLocation;
   units: string[];
   orderType?: string;
 }
@@ -800,6 +800,10 @@ interface SerIlynPayneFootmanKilled {
   house: string;
   region: string;
 }
+
+type GameLocation = typeof possibleLocations[number];
+
+type HouseCard = typeof possibleHouseCards[number];
 
 interface CerseiLannisterNoOrderAvailable {
   type: "cersei-lannister-no-order-available";

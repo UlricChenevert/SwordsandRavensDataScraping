@@ -57,4 +57,17 @@ export const FactionBattleAnalyzer = new GameDataAnalyzer(analyzeFactionBattleSt
     }
     return { MiliaryFactionStatistics: result };
 });
+// export const BidAnalyzer = new GameDataAnalyzer(analyzeBidDistributions, (trials)=>{
+//     const ironThroneDistribution;
+//     const fiefdomDistribution;
+//     const kingsCourtDistribution;
+//     let averageBid;
+//     trials.forEach()
+//     return {
+//         "Iron Throne Distribution": ironThroneDistribution,
+//         "Fiefdom Distribution": fiefdomDistribution,
+//         "King's Court Distribution": kingsCourtDistribution,
+//         "Average Bid": averageBid,
+//     };
+// })
 //# sourceMappingURL=ConfiguredAnalyzers.js.map

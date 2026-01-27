@@ -1,11 +1,18 @@
-const extractCombatLogs = (data) => {
-    const allCombatLogs = [];
-    Object.values(data).forEach((gameData) => {
-        if (gameData.combatLogs) {
-            allCombatLogs.push(...gameData.combatLogs);
-        }
+import { possibleFactions } from "../../ScrapedData/GameConstants.js";
+import { workingCardTotalDistributionFactory, incrementCardDistributionFromBattleParticipant, extractCombatLogs, emptyAverageCardDistributionFactory, averageAllDistributions } from "../Utilities/MiltaryAnalysisUtilities.js";
+export const analyzePossibleCardChoice = (data) => {
+    const combatLogs = extractCombatLogs(data);
+    const workingCardDistributions = workingCardTotalDistributionFactory();
+    // per faction
+    // Probably buckets: location, opposite side total, non-card strength
+    combatLogs.forEach((log) => {
+        incrementCardDistributionFromBattleParticipant(log.BattleData.AttackedRegion, log.WinnerData, log.LoserData, workingCardDistributions);
+        incrementCardDistributionFromBattleParticipant(log.BattleData.AttackedRegion, log.LoserData, log.WinnerData, workingCardDistributions);
     });
-    return allCombatLogs;
+    const factionCardProbabilities = emptyAverageCardDistributionFactory();
+    // Average all data
+    possibleFactions.forEach((faction) => averageAllDistributions(workingCardDistributions[faction], factionCardProbabilities[faction]));
+    return factionCardProbabilities;
 };
 export const analyzeBattleAreas = (data) => {
     const combatLogs = extractCombatLogs(data);

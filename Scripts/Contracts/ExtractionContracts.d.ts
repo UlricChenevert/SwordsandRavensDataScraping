@@ -1,4 +1,4 @@
-import { BidTracks, CleanBiddingData, CombatStats, Factions, GameClient, GameLogData, House, IHouseSnapshot, IIronBankSnapshot } from "../../ScrapedData/GameTypes.js";
+import { BidTracks, CleanBiddingData, CombatStats, Factions, GameClient, GameLocation, GameLogData, House, HouseCard, IHouseSnapshot, IIronBankSnapshot } from "../../ScrapedData/GameTypes.js";
 
 type IGameLogDataExtractor<T> = (log : GameLogData[], gameRoundMapping : LogIndexToGameRound[]) => T & object
 
@@ -81,9 +81,9 @@ type CombatLog = {
 
 type BattleLog = {
   Attacker : Factions
-  AttackerRegion : string
+  AttackerRegion : GameLocation
   Defender : Factions
-  AttackedRegion : string
+  AttackedRegion : GameLocation
 }
 
 type BattleParticipantLog = {
@@ -102,9 +102,9 @@ type BattleParticipantLog = {
 
   GarrisonStrength: number;
   
-  HouseCard: string | null;
+  HouseCard: HouseCard | null;
   HouseCardStrength: number;
-  HouseCardSelection : string[]
+  HouseCardSelection : HouseCard[]
 
   FiefdomTrackPosition : number
   
@@ -129,4 +129,7 @@ type BidAnalysisData = {
     "Fiefdom Distribution": { [key: number]: number };
     "King's Court Distribution": { [key: number]: number };
     "Average Bid": number;
+    "Iron Throne Bid Chart" : number[][],
+    "Fiefdom Bid Chart" : number[][],
+    "King's Court Bid Chart" : number[][],
 };

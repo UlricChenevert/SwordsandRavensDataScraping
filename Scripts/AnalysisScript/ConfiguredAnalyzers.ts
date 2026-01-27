@@ -2,6 +2,7 @@ import { Factions } from "../../ScrapedData/GameTypes.js";
 import { FactionStats } from "../Contracts/ExtractionContracts.js";
 import { analyzeFactionBattleStats } from "../Analysis Modules/MiltaryAnalysis.js";
 import { GameDataAnalyzer } from "./AnalysisEngine.js";
+import { analyzeBidDistributions } from "../Analysis Modules/AnalyzeBids.js";
 
 const combineFactionStats = (workingStatistic? : FactionStats, newStatistic? : FactionStats)=>{
     if (newStatistic === undefined) return workingStatistic // Nothing to combine
@@ -9,7 +10,6 @@ const combineFactionStats = (workingStatistic? : FactionStats, newStatistic? : F
     if (workingStatistic === undefined) {
         return  newStatistic
     }
-    
     
     workingStatistic.wins += newStatistic.wins;
     workingStatistic.losses += newStatistic.losses;
@@ -72,4 +72,21 @@ export const FactionBattleAnalyzer = new GameDataAnalyzer(analyzeFactionBattleSt
     
     return {MiliaryFactionStatistics: result}
 })
+
+// export const BidAnalyzer = new GameDataAnalyzer(analyzeBidDistributions, (trials)=>{
+//     const ironThroneDistribution;
+//     const fiefdomDistribution;
+//     const kingsCourtDistribution;
+//     let averageBid;
+    
+//     trials.forEach()
+
+
+//     return {
+//         "Iron Throne Distribution": ironThroneDistribution,
+//         "Fiefdom Distribution": fiefdomDistribution,
+//         "King's Court Distribution": kingsCourtDistribution,
+//         "Average Bid": averageBid,
+//     };
+// })
 

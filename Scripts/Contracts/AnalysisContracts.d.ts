@@ -1,4 +1,4 @@
-import { Factions } from "../../ScrapedData/GameTypes.js";
+import { Factions, GameLocation, HouseCard } from "../../ScrapedData/GameTypes.js";
 import { FactionStats, ProvinceStats, ArmyComposition, ScrapedData } from "./ExtractionContracts.js";
 
 type IGameDataAnalyzer<ReturnedObject extends object> = (data : ScrapedData) => ReturnedObject
@@ -6,6 +6,21 @@ type IGameDataAnalyzer<ReturnedObject extends object> = (data : ScrapedData) => 
 type ITrialCombination<ReturnedObject extends object> = (data : ReturnedObject[]) => ReturnedObject
 
 // ===== BATTLE ANALYSIS =====
+type SumDistribution = {SumDistribution : Map<HouseCard, number>, Total : number}
+
+type ProbablyDistribution = {Probability : Map<HouseCard, number>, Total : number}
+
+type WorkingCardTotalDistributions = {
+  LocationDistributions: Record<GameLocation, SumDistribution>
+  OppositeSideStrengthDistributions: Map<number, SumDistribution>
+  NonCardStrengthDistributions: Map<number, SumDistribution>
+}
+
+type CardChoiceProbabilityBuckets = {
+  LocationDistributions : Record<GameLocation, ProbablyDistribution>,
+  OppositeSideStrengthDistributions : Map<number, ProbablyDistribution>,
+  NonCardStrengthDistributions : Map<number, ProbablyDistribution>,
+}
 
 type BattleAreaAnalysis = {
   BattleAreas: Map<string, number>;

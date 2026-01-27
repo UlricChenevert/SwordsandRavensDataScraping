@@ -27,4 +27,32 @@ export const determineProbabilityMassDistribution = (dataArray, numberAccessor) 
     }
     return distribution;
 };
+export const determineCDF = (PartialMassDistribution) => {
+    const CDF = new Map();
+    let totalWorkingProbably = 0;
+    for (const probably of Object.entries(PartialMassDistribution)) {
+        totalWorkingProbably += probably[1];
+        CDF.set(parseInt(probably[0]), totalWorkingProbably);
+    }
+    return CDF;
+};
+export const getProbabilityFromCDF = (testNumber, CDF) => {
+    while (CDF.get(testNumber) === undefined)
+        testNumber--;
+    return CDF.get(testNumber);
+};
+// Helper for combinations (nCr)
+export const binomial = (n, r) => {
+    if (r < 0 || r > n)
+        return 0;
+    if (r === 0 || r === n)
+        return 1;
+    if (r > n / 2)
+        r = n - r;
+    let res = 1;
+    for (let i = 1; i <= r; i++) {
+        res = res * (n - i + 1) / i;
+    }
+    return res;
+};
 //# sourceMappingURL=Stats.js.map
