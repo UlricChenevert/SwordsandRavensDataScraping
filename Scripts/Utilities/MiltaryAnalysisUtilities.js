@@ -48,6 +48,31 @@ export const incrementCardDistribution = (record, houseCard) => {
         record.SumDistribution.set(houseCard, cardAppearances + 1);
     record.Total += 1;
 };
+export const combineCardDistributions = (newDistribution, targetDistribution) => {
+    if (newDistribution === undefined)
+        return;
+    if (targetDistribution === undefined) {
+        targetDistribution = newDistribution;
+        return;
+    }
+    const newTotal = targetDistribution.Total + newDistribution.Total;
+    newDistribution.Probability.forEach((newProbability, houseCard) => {
+        const targetProbably = targetDistribution.Probability.get(houseCard);
+        if (targetProbably === undefined)
+            targetDistribution.Probability.set(houseCard, newProbability);
+        else
+            targetDistribution.Probability.set(houseCard, (targetProbably * targetDistribution.Total + newProbability * newDistribution.Total) / newTotal);
+    });
+    targetDistribution.Total = newTotal;
+};
+export const combineCardDistributionForMap = (oldDistributionMap, key, newProbabilityDistribution) => {
+    let oldCardDistribution = oldDistributionMap.get(key);
+    if (oldCardDistribution === undefined) {
+        oldCardDistribution = cardProbablyDistributionFactory();
+        oldDistributionMap.set(key, newProbabilityDistribution);
+    }
+    combineCardDistributions(oldCardDistribution, newProbabilityDistribution);
+};
 export const incrementCardDistributionForMap = (map, key, houseCard) => {
     let cardDistributions = map.get(key);
     if (cardDistributions === undefined) {

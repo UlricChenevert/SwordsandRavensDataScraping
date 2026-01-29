@@ -66,6 +66,40 @@ export const incrementCardDistribution = (record : SumDistribution, houseCard : 
   record.Total += 1
 }
 
+export const combineCardDistributions = (newDistribution : ProbablyDistribution | undefined, targetDistribution : ProbablyDistribution | undefined) => {
+  if (newDistribution === undefined)
+    return
+
+  if (targetDistribution === undefined) {
+    targetDistribution = newDistribution
+    return
+  }
+  
+  const newTotal = targetDistribution.Total + newDistribution.Total
+
+  newDistribution.Probability.forEach((newProbability, houseCard)=>{
+    const targetProbably = targetDistribution.Probability.get(houseCard)
+    
+    if (targetProbably === undefined)
+      targetDistribution.Probability.set(houseCard, newProbability)
+    else 
+      targetDistribution.Probability.set(houseCard, (targetProbably * targetDistribution.Total + newProbability * newDistribution.Total) / newTotal)
+  })
+
+  targetDistribution.Total = newTotal
+}
+
+export const combineCardDistributionForMap = <T>(oldDistributionMap: Map<T, ProbablyDistribution>, key : T, newProbabilityDistribution : ProbablyDistribution) => {
+  let oldCardDistribution : ProbablyDistribution | undefined = oldDistributionMap.get(key)
+  
+  if (oldCardDistribution === undefined) {
+    oldCardDistribution = cardProbablyDistributionFactory()
+    oldDistributionMap.set(key, newProbabilityDistribution)
+  }
+  
+  combineCardDistributions(oldCardDistribution, newProbabilityDistribution)
+}
+
 export const incrementCardDistributionForMap = <T>(map: Map<T, SumDistribution>, key : T, houseCard : HouseCard) => {
   let cardDistributions : SumDistribution | undefined = map.get(key)
   if (cardDistributions === undefined) {

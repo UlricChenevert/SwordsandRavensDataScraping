@@ -1,1 +1,1 @@
-tsx Scripts/AnalysisScript/AnalysisScript.ts
+tsx Scripts/AnalysisScript/Typescript/AnalysisScript.ts

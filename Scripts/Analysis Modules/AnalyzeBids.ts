@@ -1,4 +1,5 @@
 import { CleanBiddingData } from "../../ScrapedData/GameTypes.js";
+import { ProbablyDistribution } from "../Contracts/AnalysisContracts.js";
 import { BidAnalysisData, ScrapedData } from "../Contracts/ExtractionContracts.js";
 import { binomial, determineCDF, determineProbabilityMassDistribution, getProbabilityFromCDF } from "../Utilities/Stats.js";
 
@@ -31,8 +32,8 @@ export const analyzeBidDistributions = (data: ScrapedData): BidAnalysisData => {
     };
 };
 
-const determineBiddingPlacement = (BidPartialMassDistribution : {[key: number]: number;}, playerCount: number = 8, maxBid = 20) => {
-    const finalBidMatrix = []
+const determineBiddingPlacement = (BidPartialMassDistribution : {[key: number]: number;}, playerCount: number = 8, maxBid = 20) : ProbablyDistribution[][] => {
+    const finalBidMatrix : ProbablyDistribution[][] = []
     const CDF = determineCDF(BidPartialMassDistribution)
 
     const numOpponents = playerCount - 1;

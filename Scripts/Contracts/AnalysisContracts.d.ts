@@ -1,9 +1,10 @@
 import { Factions, GameLocation, HouseCard } from "../../ScrapedData/GameTypes.js";
-import { FactionStats, ProvinceStats, ArmyComposition, ScrapedData } from "./ExtractionContracts.js";
+import { AnalyzedKeys } from "./AnalysisConstants.ts";
+import { FactionStats, ProvinceStats, ArmyComposition, ScrapedData, BidAnalysisData } from "./ExtractionContracts.js";
 
 type IGameDataAnalyzer<ReturnedObject extends object> = (data : ScrapedData) => ReturnedObject
 
-type ITrialCombination<ReturnedObject extends object> = (data : ReturnedObject[]) => ReturnedObject
+type ITrialCombination<ReturnedObject extends object> = (data : ReturnedObject[], combinedData : AnalyzedData) => void
 
 // ===== BATTLE ANALYSIS =====
 type SumDistribution = {SumDistribution : Map<HouseCard, number>, Total : number}
@@ -49,7 +50,7 @@ type ProvinceCountTimelineAnalysis = {
 // ===== FACTION ANALYSIS =====
 
 type MiliaryFactionStatistics = {
-  MiliaryFactionStatistics: {
+  [AnalyzedKeys.MiliaryFactionStatistics]: {
     [key in Factions]: FactionStats;
   };
 };
@@ -72,12 +73,17 @@ type analysisTypes =
     | ArmyCompositionAnalysis
     | ProvinceCountTimelineAnalysis
     | MiliaryFactionStatistics
+    | BidAnalysisData
+    | CardChoiceAnalysisData
 
-type analyzedData = 
-    (BattleAreaAnalysis | undefined) 
-    & (BattleStrategyAnalysis | undefined )
-    & (ProvinceDistributionAnalysis | undefined)
-    & (ProvinceControlAnalysis | undefined)
-    & (ArmyCompositionAnalysis | undefined)
-    & (ProvinceCountTimelineAnalysis | undefined)
-    & (MiliaryFactionStatistics | undefined)
+type CardChoiceAnalysisData = {[AnalyzedKeys.CardChoices]: Record<Factions, CardChoiceProbabilityBuckets>}
+
+type AnalyzedData = Partial<BattleAreaAnalysis 
+    & BattleStrategyAnalysis 
+    & ProvinceDistributionAnalysis
+    & ProvinceControlAnalysis
+    & ArmyCompositionAnalysis
+    & ProvinceCountTimelineAnalysis
+    & MiliaryFactionStatistics
+    & BidAnalysisData
+    & CardChoiceAnalysisData>

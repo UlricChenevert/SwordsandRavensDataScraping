@@ -1,4 +1,5 @@
 import { BidTracks, CleanBiddingData, CombatStats, Factions, GameClient, GameLocation, GameLogData, House, HouseCard, IHouseSnapshot, IIronBankSnapshot } from "../../ScrapedData/GameTypes.js";
+import { CardChoiceProbabilityBuckets, ProbablyDistribution } from "./AnalysisContracts.js";
 
 type IGameLogDataExtractor<T> = (log : GameLogData[], gameRoundMapping : LogIndexToGameRound[]) => T & object
 
@@ -41,7 +42,6 @@ interface FactionStats {
   regionVictories: Map<string, number>;
   regionLosses: Map<string, number>;
   winRateOverTime: Array<{ timestamp: number; winRate: number }>;
-  gameWinningFaction: boolean;
 }
 
 interface ProvinceStats {
@@ -129,7 +129,7 @@ type BidAnalysisData = {
     "Fiefdom Distribution": { [key: number]: number };
     "King's Court Distribution": { [key: number]: number };
     "Average Bid": number;
-    "Iron Throne Bid Chart" : number[][],
-    "Fiefdom Bid Chart" : number[][],
-    "King's Court Bid Chart" : number[][],
+    "Iron Throne Bid Chart" : ProbablyDistribution[][],
+    "Fiefdom Bid Chart" : ProbablyDistribution[][],
+    "King's Court Bid Chart" : ProbablyDistribution[][],
 };
