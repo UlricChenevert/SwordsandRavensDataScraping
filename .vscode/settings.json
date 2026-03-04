@@ -1,6 +1,6 @@
 {
     "files.exclude": {
-        ".gitignore": true,
+        // ".gitignore": true,
         "**/.DS_Store": true,
         "**/.git": true,
         "**/*.js.map": true,
@@ -11,7 +11,7 @@
         "tsconfig.json": true,
         ".claude": true,
         ".venv": true,
-        // ".Legacy":true,
+        ".Legacy":true,
 
         "**/__pycache__":true,
         "**/__init__.py":true,
