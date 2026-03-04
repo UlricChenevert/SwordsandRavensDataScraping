@@ -1,5 +1,5 @@
 import { GameClient, IngameGameState } from "../Contracts/GameTypes.js"
-import { IGameDataExtractor, PlayerExtraction } from "../../!Contracts/ExtractionContracts.js"
+import { IGameDataExtractor, PlayerExtraction } from "../../Contracts/ExtractionContracts.js"
 
 export const extractPlayerData : IGameDataExtractor<PlayerExtraction> = (client : GameClient) => {
     const GameState : IngameGameState | undefined = client.entireGame?.childGameState

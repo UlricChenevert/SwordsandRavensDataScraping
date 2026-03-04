@@ -1,5 +1,5 @@
 import { EntireGame, GameClient, GameLog, IngameGameState, OrdersRevealed } from "../Contracts/GameTypes.js";
-import { LogIndexToGameRound, IGameDataExtractor, IGameLogDataExtractor } from "../../!Contracts/ExtractionContracts.js";
+import { LogIndexToGameRound, IGameDataExtractor, IGameLogDataExtractor } from "../../Contracts/ExtractionContracts.js";
 import { extractBidData } from "../Modules/BiddingExtraction.js";
 import { extractMilitaryData } from "../Modules/MilitaryExtraction.js";
 import { extractPlayerData } from "../Modules/PlayerExtraction.js";

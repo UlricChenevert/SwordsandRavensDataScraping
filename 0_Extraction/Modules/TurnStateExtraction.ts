@@ -1,7 +1,7 @@
 // Coin / Power token, land size,
 
 import { EntireGameSnapshot, Factions, GameLogData, OrdersRevealed, SnapshotMigrator, UnitState } from "../Contracts/GameTypes.js";
-import { IGameLogDataExtractor } from "../../!Contracts/ExtractionContracts.js"
+import { IGameLogDataExtractor } from "../../Contracts/ExtractionContracts.js"
 import { findCorrespondingRound } from "./GameRoundExtraction.js";
 import { ExtractedRoundData, ExtractedGameStateData } from "../Contracts/Contracts.js";
 import { ExtractedRoundDataFactory } from "../Utilities/ClassFactories.js";

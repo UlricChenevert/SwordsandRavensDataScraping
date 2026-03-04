@@ -11,10 +11,10 @@
         "tsconfig.json": true,
         ".claude": true,
         ".venv": true,
-        ".Legacy":true,
+        // ".Legacy":true,
 
-        "**/__pycache__":true,
-        "**/__init__.py":true,
+        // "**/__pycache__":true,
+        // "**/__init__.py":true,
         // "**/*.d.ts": { "when": "$(basename).ts" },
     },
     "explorer.fileNesting.enabled": true,

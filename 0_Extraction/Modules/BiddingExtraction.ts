@@ -1,6 +1,6 @@
 import { tracksMapping } from "../Contracts/GameConstants.js";
 import { BidTracks, Factions, GameLogData } from "../Contracts/GameTypes.js";
-import { CleanBiddingData, ExtractedBidData, IGameLogDataExtractor, WildingTrackData } from "../../!Contracts/ExtractionContracts.js";
+import { CleanBiddingData, ExtractedBidData, IGameLogDataExtractor, WildingTrackData } from "../../Contracts/ExtractionContracts.js";
 import { findCorrespondingRound } from "./GameRoundExtraction.js";
 
 export const extractBidData: IGameLogDataExtractor<ExtractedBidData> = (logData: GameLogData[], gameRoundMapping): ExtractedBidData => {

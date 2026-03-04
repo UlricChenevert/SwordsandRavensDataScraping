@@ -1,4 +1,4 @@
-import { IGameLogDataExtractor, ExtractedMilitaryData, CombatLog, BattleLog, BattleParticipantLog } from "../../!Contracts/ExtractionContracts.js";
+import { IGameLogDataExtractor, ExtractedMilitaryData, CombatLog, BattleLog, BattleParticipantLog } from "../../Contracts/ExtractionContracts.js";
 import { GameLogData, Attack, SupportDeclared, SupportRefused, CombatStats } from "../Contracts/GameTypes.js";
 import { findCorrespondingRound } from "./GameRoundExtraction.js";
 

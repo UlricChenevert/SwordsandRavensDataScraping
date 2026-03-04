@@ -25,6 +25,13 @@
       "request": "launch",
       "program": "Scripts/AnalysisScript/Python/AnalysisScript.py",
       "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Python Report",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "2_Reporting/GenerateReport.py",
+      "console": "integratedTerminal"
     }
   ]
 }
