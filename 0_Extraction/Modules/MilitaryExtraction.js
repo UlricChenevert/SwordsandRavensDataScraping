@@ -1,13 +1,11 @@
-import { findCorrespondingRound } from "./GameRoundExtraction.js";
 // ===== DATA EXTRACTION FUNCTIONS =====
-export const extractMilitaryData = (logData, gameRoundMapping, gameState) => {
+export const extractMilitaryData = (logData, gameState) => {
     const combatLogs = [];
     // Process CombatResult logs
     logData.forEach((log, index) => {
         if (log.type !== "combat-result")
             return;
         const combatResult = log;
-        const round = findCorrespondingRound(index, gameRoundMapping);
         let AttackLog;
         let SupportDeclaredLogs = [];
         let SupportRefusedLogs = [];
@@ -77,7 +75,6 @@ export const extractMilitaryData = (logData, gameRoundMapping, gameState) => {
             TidesOfBattleCard: winnerStats.tidesOfBattleCard,
             Total: winnerStats.total,
             currentGameStateReferenceIndex: index,
-            FiefdomTrackPosition: round.fiefdomsTrack.findIndex((x) => x == AttackLog.attacker)
         };
         const loserData = {
             House: loserStats.house,
@@ -96,13 +93,12 @@ export const extractMilitaryData = (logData, gameRoundMapping, gameState) => {
             TidesOfBattleCard: loserStats.tidesOfBattleCard,
             Total: loserStats.total,
             currentGameStateReferenceIndex: index,
-            FiefdomTrackPosition: round.fiefdomsTrack.findIndex((x) => x == AttackLog.attacked)
         };
         combatLogs.push({
             BattleData: battleData,
             WinnerData: winnerData,
             LoserData: loserData,
-            round: round.round,
+            CorrespondingTurnIndex: index
         });
     });
     return { combatLogs };

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C \"c:/Users/WUlri/Nextcloud/Projects/Screenscraping\" show 7f9ecf8:Tools/bundleJS.ps1)"
+      "Bash(git -C \"c:/Users/WUlri/Nextcloud/Projects/Screenscraping\" show 7f9ecf8:Tools/bundleJS.ps1)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

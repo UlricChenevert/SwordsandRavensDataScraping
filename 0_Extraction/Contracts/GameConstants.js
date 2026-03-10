@@ -14,6 +14,12 @@ export const tracksMapping = {
     1: "Fiefdom",
     2: "King's Court",
 };
+export var InfluenceTracks;
+(function (InfluenceTracks) {
+    InfluenceTracks[InfluenceTracks["Iron Throne"] = 0] = "Iron Throne";
+    InfluenceTracks[InfluenceTracks["Fiefdom"] = 1] = "Fiefdom";
+    InfluenceTracks[InfluenceTracks["King's Court"] = 2] = "King's Court";
+})(InfluenceTracks || (InfluenceTracks = {}));
 export var ConnectionState;
 (function (ConnectionState) {
     ConnectionState[ConnectionState["INITIALIZING"] = 0] = "INITIALIZING";

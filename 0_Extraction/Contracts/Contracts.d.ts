@@ -5,7 +5,7 @@ type CleanHouseSnapshot = {
     SupplyTier: number;
     PowerTokens: number;
     LandAreas : GameLocation[]
-    CastleCount: number;
+    RoundEndCastleCount: number;
     LandAreaCount: number;
 }
 
@@ -13,10 +13,16 @@ type ExtractedRoundData = {
     HouseSnapshotData: Record<Factions, CleanHouseSnapshot>;
     OrderTokenChoices: Partial<Record<GameLocation, string>>;
     UnitLocationSnapshotData: Partial<Record<GameLocation, UnitState[]>>
+    
+    IronThroneTrack : Factions[]
+    FiefdomTrack : Factions[],
+    KingsCourtThroneTrack : Factions[],
+    
+    LogIndex : number,
     Round : number
-    LogIndex : number
 };
 
 type ExtractedGameStateData = {
     Rounds : ExtractedRoundData[]
+    InErrorGame : boolean
 }

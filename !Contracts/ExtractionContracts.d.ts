@@ -1,15 +1,15 @@
-import { ExtractedGameStateData } from "../0_Extraction/Contracts/Contracts.js";
+// import { ExtractedGameStateData } from "../0_Extraction/Contracts/Contracts.js";
 import { BidTracks, Factions, GameClient, GameLocation, GameLogData, HouseCard, IHouseSnapshot, IIronBankSnapshot, IngameGameState } from "../0_Extraction/Contracts/GameTypes.js";
 import { BidPlacementChart } from "./AnalysisContracts.js";
 
-type IGameLogDataExtractor<T> = (log : GameLogData[], gameRoundMapping : LogIndexToGameRound[], gameState : IngameGameState) => T & object
+type IGameLogDataExtractor<T> = (log : GameLogData[], gameState : IngameGameState) => T & object
 
 type IGameDataExtractor<T> = (client : GameClient) => T & object
 
 type PlayerExtraction = {Players : {playerID:string, playerName: string}[]}
 
 type ScrapedData = {
-  [key: string] : PlayerExtraction & ExtractedMilitaryData & ExtractedBidData & ExtractedGameStateData
+  [key: string] : PlayerExtraction & ExtractedMilitaryData & ExtractedBidData
 }
 
 
@@ -77,7 +77,7 @@ type CombatLog = {
   BattleData : BattleLog
   LoserData : BattleParticipantLog
   WinnerData : BattleParticipantLog
-  round : number
+  CorrespondingTurnIndex : number
 } 
 
 type BattleLog = {
@@ -107,8 +107,6 @@ type BattleParticipantLog = {
   HouseCardStrength: number;
 
   currentGameStateReferenceIndex : number; // Used to figure out the current state of the game
-
-  FiefdomTrackPosition : number
   
   ValyrianSteelBlade: number;
 
@@ -119,13 +117,12 @@ type BattleParticipantLog = {
 
 type AttackLog = GameLogData & { type: "attack"; attacker: string; attackingRegion: string; attackedRegion: string };
 
-type WildingTrackData = {Amount : number, Faction : Factions, Round : number}
+type WildingTrackData = {Amount : number, Faction : Factions, currentGameStateReferenceIndex: number}
 
 interface CleanBiddingData {
   "Track" : BidTracks, 
   "Amount": number, 
   "Faction": Factions,
-  Round : number,
   currentGameStateReferenceIndex: number
 }
 

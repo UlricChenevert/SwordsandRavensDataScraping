@@ -5,7 +5,7 @@ export const CleanHouseSnapshotFactory = (HouseName) => {
         SupplyTier: -1,
         PowerTokens: -1,
         LandAreas: [],
-        CastleCount: -1,
+        RoundEndCastleCount: -1,
         LandAreaCount: -1
     };
 };
@@ -16,6 +16,9 @@ export const ExtractedRoundDataFactory = () => {
     });
     return {
         HouseSnapshotData: HouseSnapshots,
+        IronThroneTrack: [],
+        FiefdomTrack: [],
+        KingsCourtThroneTrack: [],
         OrderTokenChoices: {},
         UnitLocationSnapshotData: {},
         Round: -1,

@@ -1,6 +1,6 @@
 ### Overview
 
-A data collection and analysis toolkit for the online Game of Thrones board game. The end goal is a real-time strategic assistant that predicts player actions and recommends optimal plays, powered by a hybrid of traditional ML models (prediction) and an LLM (explanation).
+A data collection and analysis toolkit for the online Game of Thrones board game. The end goal is a real-time strategic assistant powered by a RAG (Retrieval-Augmented Generation) pipeline: historical game situations are embedded into a vector store, and at inference time the LLM retrieves the most similar past situations — with their outcomes — to reason over and produce recommendations.
 
 ---
 
@@ -9,10 +9,10 @@ A data collection and analysis toolkit for the online Game of Thrones board game
 Wreck everyone in Game of Thrones through well-informed stats, strategy, and LLM analysis :)
 
 The assistant will:
-1. **Predict opponent actions** — forecast what neighboring players are likely to bid, which orders they will place, and which house cards they will play
-2. **Recommend your own actions** — suggest optimal bids and orders given predicted opponent behavior
-3. **Evaluate action quality** — score a proposed action based on patterns from historical high-performing games
-4. **Explain reasoning** — produce a concise natural-language summary of why a recommendation makes sense
+1. **Predict opponent actions** — retrieve similar past situations where opponents faced the same conditions and surface what they bid / played
+2. **Recommend your own actions** — suggest optimal bids and orders by grounding the LLM in retrieved historical precedents with known outcomes
+3. **Evaluate action quality** — score a proposed action by comparing it against retrieved strong/weak plays in analogous positions
+4. **Explain reasoning** — produce a concise natural-language summary grounded in specific retrieved examples, not just abstract patterns
 
 ---
 
@@ -24,17 +24,64 @@ The injection script hooks into the game client's `onMessage` deserialization pi
 
 Target: ~1,000 games across multiple players. The scraper is already built — this is purely a data collection problem.
 
-**Phase 2: ML Model Training**
+**Phase 2: Feature Extraction & Embedding**
 
-Convert raw game JSON to tabular features and train XGBoost/LightGBM models for bid prediction, house card prediction, and action quality scoring. These models are fast, interpretable, and well-suited for structured game data.
+Convert raw game JSON into structured game-state feature vectors for each decision point (bids, combats). Each vector captures full board context at the moment of the decision.
 
-**Phase 3: LLM Explanation Layer**
+These vectors are embedded (via a text or numeric embedding model) and stored in a vector database alongside the decision taken and its eventual outcome (win/loss, rank, delta). This is the retrieval corpus.
 
-Use an LLM to translate ML model outputs into natural-language recommendations. This does not require fine-tuning — the ML predictions plus a compact game state summary are passed as context to a capable base model (Claude or GPT-4) via API.
+**Phase 3: RAG Inference Layer**
+
+At inference time, the current game state is embedded and used to query the vector store for the K most similar historical situations. The retrieved examples — state, action taken, and outcome — are passed to the LLM as context.
+
+The LLM reasons over these grounded examples to produce a recommendation: what to bid, which card to play, and why.
 
 **Phase 4: Assistant Interface**
 
-A lightweight interface that accepts current game state, runs the ML models, and presents recommendations during live play.
+A lightweight interface that accepts the current game state, runs the RAG pipeline, and presents recommendations during live play.
+
+---
+
+### RAG Architecture
+
+```
+Current game state
+    │
+    ▼
+Feature extraction (same features as stored in corpus)
+    │
+    ▼
+Embedding model → query vector
+    │
+    ▼
+Vector store (FAISS / Chroma / Pinecone)
+    │  top-K nearest neighbors
+    ▼
+Retrieved examples:
+  { game_state_summary, action_taken, outcome }  × K
+    │
+    ▼
+LLM prompt:
+  "Given the current state [compact summary],
+   here are K similar historical situations and what happened:
+   [retrieved examples]
+   What should I do, and why?"
+    │
+    ▼
+Natural-language recommendation + reasoning
+```
+
+**Retrieval corpus schema (one record per decision point):**
+
+| Field | Description |
+|-------|-------------|
+| `embedding` | Dense vector of game state features at decision time |
+| `game_state_summary` | Compact text serialization of board state |
+| `decision_type` | `bid_iron_throne`, `bid_fiefdom`, `bid_kings_court`, `house_card`, etc. |
+| `faction` | Faction making the decision |
+| `action_taken` | The bid value or card played |
+| `outcome_label` | `strong` / `neutral` / `weak` (based on final rank) |
+| `outcome_detail` | Final castle count, rank, win/loss |
 
 ---
 
@@ -57,27 +104,34 @@ Run tasks with VSCode Task Runner:
   Contracts/          - Python mirrors of the TS contracts
   Framework/          - Data loader, reporting engine
   Modules/            - Display, per-analyzer modules
-Training/             - ML training pipeline
-  format_data.py      - Joins events to game state via reference index, outputs features
-  train_bids.py       - XGBoost bid prediction model (per track)
-  train_cards.py      - XGBoost house card prediction model
-  train_quality.py    - XGBoost action quality scoring model
-  evaluate.py         - Evaluation metrics vs baselines on held-out test games
+Training/
+  format_data.py      - Joins events to game state, extracts feature vectors + outcome labels
+  embed_corpus.py     - Embeds feature vectors, builds and persists the vector store
+  evaluate_retrieval.py - Measures retrieval quality (do top-K neighbors share the same outcome?)
 Inference/
-  predict.py          - Runs ML models against current game state
-  explain.py          - LLM explanation layer (API call with ML output as context)
+  retrieve.py         - Embeds current game state, queries vector store for top-K neighbors
+  explain.py          - Formats retrieved examples into LLM prompt, calls Claude/GPT-4 API
+  predict.py          - End-to-end: retrieve + explain → recommendation
+RAG/
+  corpus/             - Persisted vector store (FAISS index + metadata)
+  prompts/            - Prompt templates for each decision type
 ```
 
 ---
 
-### Why Hybrid ML + LLM (Not LLM for Everything)
+### Why RAG (Not Fine-tuning or Pure ML)
 
-Fine-tuning an LLM to output `"5"` for a bid prediction would work, but is the wrong tool:
-- XGBoost on tabular features trains in minutes on CPU and reliably outputs numbers
-- LLMs hallucinate numeric outputs and need careful parsing
-- At 1,000 games the LLM would likely be outperformed by gradient boosting on structured features
+**Fine-tuning** an LLM to output bid numbers would work, but requires retraining as the corpus grows and loses interpretability.
 
-The LLM's actual strength is **reasoning and language** — taking ML predictions and explaining *why* a bid of 5 makes sense given the current board position. That requires no fine-tuning, just a well-structured prompt.
+**Pure ML** (XGBoost etc.) on tabular features trains quickly and is accurate for numeric outputs, but produces no explanation and can't generalize to novel board states with qualitative context.
+
+**RAG** combines both strengths:
+- Retrieval grounds the LLM in real historical precedents — it's not hallucinating; it's citing specific past games
+- The LLM's reasoning strength is used for what it's actually good at: synthesizing multiple examples and explaining *why* an action is good given this board state
+- The corpus naturally improves as more games are collected — no retraining step
+- Retrieved examples are inspectable, making recommendations auditable
+
+ML models (XGBoost bid predictor, card predictor) remain useful as fast, lightweight signals that can be included as additional context in the RAG prompt alongside retrieved examples.
 
 ---
 
@@ -100,7 +154,7 @@ Both `combatLogs` and `TrackBids` carry a `currentGameStateReferenceIndex` that 
 **At 1,000 games:**
 - ~46,000 labeled combat encounters
 - ~78,000 labeled bid decisions
-- ~1,100,000 game state snapshots
+- ~1,100,000 game state snapshots → retrieval corpus
 
 ---
 
@@ -108,7 +162,7 @@ Both `combatLogs` and `TrackBids` carry a `currentGameStateReferenceIndex` that 
 
 #### The State Join
 
-Every prediction task starts with the same join:
+Every decision record starts with the same join:
 
 ```
 event.currentGameStateReferenceIndex
@@ -121,112 +175,56 @@ event.currentGameStateReferenceIndex
     -> ExtractedGameStateData[index]   (unit positions, order tokens, resource snapshots)
 ```
 
-This gives complete board state at the time of each bid or combat decision.
+This gives complete board state at the time of each bid or combat decision, which becomes the feature vector for embedding.
 
 #### House Card Availability
 
-A critical mechanic: played cards are discarded until reset. To reconstruct which cards are available at any combat decision, `format_data.py` scans all prior `combatLogs` in the same game for the same faction and subtracts played cards from the known starting deck. The available card set becomes a feature for the card prediction model.
+A critical mechanic: played cards are discarded until reset. To reconstruct which cards are available at any combat decision, `format_data.py` scans all prior `combatLogs` in the same game for the same faction and subtracts played cards from the known starting deck. Available card set is included in the feature vector.
 
-#### Train / Val / Test Split
+#### Outcome Labels
 
-- 80% train / 10% validation / 10% test
-- **Split by game, not by event.** Events from the same game must never appear across splits — this would leak outcome information.
-
-#### Labels: Action Quality
-
-Using per-round rate-of-change (castle/troop/token delta) as a quality label is flawed due to attribution lag and survivorship bias. Instead:
-
-- At the end of each game, rank all factions by final castle count
+At the end of each game, rank all factions by final castle count:
 - **Top 2** factions: their actions are labeled `strong`
 - **Bottom 2** factions: their actions are labeled `weak`
 - **Middle** factions: labeled `neutral`
-- Faction identity is included as a model feature, allowing the model to account for structural faction strength differences without conflating them with action quality
+
+These labels are stored in the retrieval corpus and surfaced to the LLM as part of each retrieved example.
+
+#### Train / Val / Test Split (for retrieval evaluation)
+
+- 80% corpus / 10% validation / 10% test
+- **Split by game, not by event.** Events from the same game must never appear across splits.
 
 ---
 
-### ML Models
+### Retrieval Evaluation
 
-#### 1. Bid Prediction
+Before using the system for recommendations, evaluate whether retrieval is actually finding meaningful neighbors:
 
-**Task:** Given game state at bid time, predict what a faction will bid on each track.
+| Metric | Description | Target |
+|--------|-------------|--------|
+| Outcome consistency | Do top-K neighbors share the same outcome label as the query? | > chance |
+| Action overlap | For bids: is the retrieved median bid close to the query bid? | MAE < historical mean baseline |
+| Retrieval diversity | Are neighbors from diverse games, not just the same session? | < 20% same-game neighbors |
 
-**Why this matters for recommendations:** Bid decisions are simultaneous — the optimal bid depends on what you predict opponents will bid. The model is used in two steps:
-1. Predict all opponent bids (descriptive)
-2. Compute the minimum bid that achieves your desired track position given those predictions (prescriptive)
-
-For example: if you want Iron Throne rank 1, bid `max(predicted_opponent_bids) + 1`. If rank 2-3 is acceptable, bid `median(predicted_opponent_bids)`.
-
-**Features (per faction per bid event):**
-- Current power tokens
-- Current position on each track (numeric rank)
-- Castle count, supply tier, land area count
-- Round number
-- Relative power token standing vs. all opponents
-- Last round's bid on this track (from prior events in same game)
-
-**Model:** XGBoost regressor, one per track. Or a multi-output regressor.
-
-**Baseline to beat:** Always predict the per-track historical mean bid. If the model can't beat this, it has learned nothing.
-
-#### 2. House Card Prediction
-
-**Task:** Given combat context and available cards, predict which card a faction plays.
-
-**Features:**
-- Own army strength, support strength, garrison
-- Opponent army strength, support strength, garrison
-- Own available cards (binary feature per card)
-- Opponent's remaining card count
-- Round number, Valyrian Steel Blade holder
-
-**Model:** XGBoost multi-class classifier (one class per possible card + "no card").
-
-**Evaluation metric:** Top-3 accuracy (is the correct card in the top 3 predicted probabilities?). This is more useful than top-1 accuracy given the strategic uncertainty.
-
-**Baseline:** Predict the historically most-played card for each faction.
-
-#### 3. Action Quality Scorer
-
-**Task:** Given a (game state, proposed action) pair, predict whether it is a strong, neutral, or weak play.
-
-**Features:** Game state features (same as bid model) + the proposed action type/parameters.
-
-**Model:** XGBoost classifier (3 classes).
-
-**Note:** This model will have significant noise due to the difficulty of attributing outcomes to individual actions. Treat its output as a soft signal, not a ground truth.
+If retrieval quality is poor, the issue is likely in the feature vector design — not the LLM.
 
 ---
 
-### LLM Explanation Layer
+### LLM Prompt Design
 
-The LLM is not trained — it receives a structured prompt containing:
+The LLM receives a structured prompt containing:
 - Current game state (compact text serialization, ~300-500 tokens)
-- ML model predictions for opponent bids and likely house cards
-- Recommended bid / action with quality score
-- Faction-specific context (available cards, territory position)
+- K retrieved historical situations with: state summary, action taken, outcome label
+- The decision to make (e.g. "how much should Stark bid on the Iron Throne?")
 
-It returns a 3-5 sentence plain-language summary of the recommendation and reasoning.
+It returns a 3-5 sentence plain-language recommendation citing specific retrieved examples.
 
 **Prompt serialization rules:**
 - Natural language, not raw JSON
 - Consistent field order every time (LLMs are sensitive to format variation)
 - Omit irrelevant factions/regions to stay within token budget
-
-This layer can use the Claude or OpenAI API. No fine-tuning needed.
-
----
-
-### Evaluation
-
-Each model is evaluated on held-out test games (never seen during training):
-
-| Model | Primary Metric | Baseline |
-|-------|---------------|----------|
-| Bid prediction | Mean Absolute Error per track | Predict historical mean bid |
-| Card prediction | Top-3 accuracy | Predict most common card per faction |
-| Action quality | Accuracy vs. relative rank labels | Majority class (predict "neutral") |
-
-A model that doesn't beat its baseline has not learned anything useful and should not be shipped.
+- Retrieved examples sorted by similarity score (most similar first)
 
 ---
 
@@ -234,9 +232,11 @@ A model that doesn't beat its baseline has not learned anything useful and shoul
 
 - [x] Proof-of-concept scraper (6 games collected)
 - [ ] Collect ~1,000 games
-- [ ] Build `Training/format_data.py` — state join, card availability tracking, label generation
-- [ ] Smoke-test: train on 6 games end-to-end to validate the pipeline (not for model quality)
-- [ ] Full training run on 1,000-game dataset
-- [ ] Evaluate all models vs. baselines on held-out test games
-- [ ] Build `Inference/predict.py` + `Inference/explain.py`
+- [ ] Build `Training/format_data.py` — state join, card availability tracking, outcome label generation
+- [ ] Build `Training/embed_corpus.py` — embed feature vectors, populate vector store
+- [ ] Smoke-test retrieval on 6 games: are neighbors visually sensible?
+- [ ] Build `Inference/retrieve.py` + `Inference/explain.py`
+- [ ] Evaluate retrieval quality (outcome consistency, action overlap)
+- [ ] Full corpus build on 1,000-game dataset
+- [ ] Tune prompt templates per decision type
 - [ ] User-facing assistant interface for live play

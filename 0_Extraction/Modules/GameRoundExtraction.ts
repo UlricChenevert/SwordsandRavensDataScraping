@@ -1,4 +1,4 @@
-import { LogIndexToGameRound } from "../../Contracts/ExtractionContracts.js"
+import { LogIndexToGameRound } from "../../!Contracts/ExtractionContracts.js"
 
 export const findCorrespondingRound = (targetIndex : number, mapping : LogIndexToGameRound[]) : LogIndexToGameRound => {
     let nextRoundIndex = mapping.findIndex((round)=>round.index >= targetIndex)

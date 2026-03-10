@@ -1,10 +1,10 @@
-import { IGameLogDataExtractor, ExtractedMilitaryData, CombatLog, BattleLog, BattleParticipantLog } from "../../Contracts/ExtractionContracts.js";
+import { IGameLogDataExtractor, ExtractedMilitaryData, CombatLog, BattleLog, BattleParticipantLog } from "../../!Contracts/ExtractionContracts.js";
 import { GameLogData, Attack, SupportDeclared, SupportRefused, CombatStats } from "../Contracts/GameTypes.js";
 import { findCorrespondingRound } from "./GameRoundExtraction.js";
 
 // ===== DATA EXTRACTION FUNCTIONS =====
 
-export const extractMilitaryData : IGameLogDataExtractor<ExtractedMilitaryData> = (logData: GameLogData[], gameRoundMapping, gameState) => {
+export const extractMilitaryData : IGameLogDataExtractor<ExtractedMilitaryData> = (logData: GameLogData[], gameState) => {
   const combatLogs: CombatLog[] = [];
 
   // Process CombatResult logs
@@ -13,7 +13,6 @@ export const extractMilitaryData : IGameLogDataExtractor<ExtractedMilitaryData> 
     if (log.type !== "combat-result") return
 
     const combatResult = log
-    const round = findCorrespondingRound(index, gameRoundMapping);
     
     let AttackLog: Attack;
     let SupportDeclaredLogs: SupportDeclared[] = [];
@@ -103,7 +102,6 @@ export const extractMilitaryData : IGameLogDataExtractor<ExtractedMilitaryData> 
       TidesOfBattleCard: winnerStats.tidesOfBattleCard,
       Total: winnerStats.total,
       currentGameStateReferenceIndex: index,
-      FiefdomTrackPosition: round.fiefdomsTrack.findIndex((x)=>x==AttackLog.attacker)
     };
     
     const loserData: BattleParticipantLog = {
@@ -123,14 +121,13 @@ export const extractMilitaryData : IGameLogDataExtractor<ExtractedMilitaryData> 
       TidesOfBattleCard: loserStats.tidesOfBattleCard,
       Total: loserStats.total,
       currentGameStateReferenceIndex: index,
-      FiefdomTrackPosition: round.fiefdomsTrack.findIndex((x)=>x==AttackLog.attacked)
     };
     
     combatLogs.push({
       BattleData: battleData,
       WinnerData: winnerData,
       LoserData: loserData,
-      round: round.round,
+      CorrespondingTurnIndex : index
     });
     
   });

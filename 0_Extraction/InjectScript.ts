@@ -8,6 +8,7 @@
 // @require      http://localhost:3000/injectionScript.js
 // ==/UserScript==
 
+import { ScrapedData } from "../!Contracts/ExtractionContracts.js";
 import { GameClient } from "./Contracts/GameTypes.js";
 import { DownloadData } from "./Framework/DownloadData.js";
 import { extractGameData } from "./Framework/ExtractGameData.js";
@@ -37,9 +38,11 @@ import { extractGameData } from "./Framework/ExtractGameData.js";
                     console.log(`--- EXTRACTING GAME STATE FOR ${gameClient.entireGame?.name} ---`);
 
                     const extractedData = extractGameData(gameClient)
+
+                    const finalJSON = {[gameClient.authData.gameId]: extractedData} as ScrapedData
                     
                     // console.log(extractedData)
-                    DownloadData({[gameClient.authData.gameId]: extractedData}, "GameOfThronesGameData")
+                    DownloadData(finalJSON, "GameOfThronesGameData")
                     
                     console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame?.name} ---`);
                     downloadedData = true

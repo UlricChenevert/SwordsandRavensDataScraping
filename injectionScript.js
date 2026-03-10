@@ -5557,6 +5557,12 @@
     1: "Fiefdom",
     2: "King's Court"
   };
+  var InfluenceTracks;
+  (function(InfluenceTracks2) {
+    InfluenceTracks2[InfluenceTracks2["Iron Throne"] = 0] = "Iron Throne";
+    InfluenceTracks2[InfluenceTracks2["Fiefdom"] = 1] = "Fiefdom";
+    InfluenceTracks2[InfluenceTracks2["King's Court"] = 2] = "King's Court";
+  })(InfluenceTracks || (InfluenceTracks = {}));
   var ConnectionState;
   (function(ConnectionState2) {
     ConnectionState2[ConnectionState2["INITIALIZING"] = 0] = "INITIALIZING";
@@ -5716,19 +5722,6 @@
     static replacementLogTypes = replacementLogTypes;
   };
 
-  // 0_Extraction/Modules/GameRoundExtraction.js
-  var findCorrespondingRound = (targetIndex, mapping) => {
-    let nextRoundIndex = mapping.findIndex((round2) => round2.index >= targetIndex);
-    const isFound = nextRoundIndex !== -1;
-    const round = isFound ? mapping[(nextRoundIndex - 1 + mapping.length) % mapping.length] : (
-      // for the nextRoundIndex = 0 case
-      mapping[mapping.length - 1]
-    );
-    if (round === void 0)
-      throw `Could not find round for ${targetIndex}`;
-    return round;
-  };
-
   // 0_Extraction/Modules/BiddingExtraction.js
   var extractBidData = (logData, gameRoundMapping) => {
     const trackBids = [];
@@ -5741,8 +5734,7 @@
             Track: tracksMapping[log.trackerI],
             Amount: bidAmountInstance[0],
             Faction: factionBidInstance,
-            currentGameStateReferenceIndex: index,
-            Round: findCorrespondingRound(index, gameRoundMapping).round
+            currentGameStateReferenceIndex: index
           });
         });
       });
@@ -5756,7 +5748,7 @@
           wildlingBids.push({
             Amount: bidAmountInstance[0],
             Faction: factionBidInstance,
-            Round: findCorrespondingRound(index, gameRoundMapping).round
+            currentGameStateReferenceIndex: index
           });
         });
       });
@@ -5765,13 +5757,12 @@
   };
 
   // 0_Extraction/Modules/MilitaryExtraction.js
-  var extractMilitaryData = (logData, gameRoundMapping, gameState) => {
+  var extractMilitaryData = (logData, gameState) => {
     const combatLogs = [];
     logData.forEach((log, index) => {
       if (log.type !== "combat-result")
         return;
       const combatResult = log;
-      const round = findCorrespondingRound(index, gameRoundMapping);
       let AttackLog;
       let SupportDeclaredLogs = [];
       let SupportRefusedLogs = [];
@@ -5825,8 +5816,7 @@
         ValyrianSteelBlade: winnerStats.valyrianSteelBlade,
         TidesOfBattleCard: winnerStats.tidesOfBattleCard,
         Total: winnerStats.total,
-        currentGameStateReferenceIndex: index,
-        FiefdomTrackPosition: round.fiefdomsTrack.findIndex((x) => x == AttackLog.attacker)
+        currentGameStateReferenceIndex: index
       };
       const loserData = {
         House: loserStats.house,
@@ -5844,14 +5834,13 @@
         ValyrianSteelBlade: loserStats.valyrianSteelBlade,
         TidesOfBattleCard: loserStats.tidesOfBattleCard,
         Total: loserStats.total,
-        currentGameStateReferenceIndex: index,
-        FiefdomTrackPosition: round.fiefdomsTrack.findIndex((x) => x == AttackLog.attacked)
+        currentGameStateReferenceIndex: index
       };
       combatLogs.push({
         BattleData: battleData,
         WinnerData: winnerData,
         LoserData: loserData,
-        round: round.round
+        CorrespondingTurnIndex: index
       });
     });
     return { combatLogs };
@@ -5880,7 +5869,7 @@
       SupplyTier: -1,
       PowerTokens: -1,
       LandAreas: [],
-      CastleCount: -1,
+      RoundEndCastleCount: -1,
       LandAreaCount: -1
     };
   };
@@ -5891,6 +5880,9 @@
     });
     return {
       HouseSnapshotData: HouseSnapshots,
+      IronThroneTrack: [],
+      FiefdomTrack: [],
+      KingsCourtThroneTrack: [],
       OrderTokenChoices: {},
       UnitLocationSnapshotData: {},
       Round: -1,
@@ -5937,8 +5929,9 @@
   }
 
   // 0_Extraction/Modules/TurnStateExtraction.js
-  var extractTurnStateData = (logData, gameRoundMapping, gameState) => {
-    const cleanData = { Rounds: [] };
+  var extractTurnStateData = (logData, gameState) => {
+    const cleanData = { Rounds: [], InErrorGame: false };
+    let inErroneousRound = false;
     let migrator = new SnapshotMigratorConstructor(gameState);
     let startingIndex = 0;
     const setupLog = logData.find((l, index) => {
@@ -5956,23 +5949,35 @@
         return;
       if (log.type === "orders-revealed") {
         migrator = new SnapshotMigratorConstructor(gameState);
+        inErroneousRound = false;
       }
-      currentSnapshot = changeSnapshotWithNewLog(migrator, currentSnapshot, log, index, gameState);
+      if (inErroneousRound)
+        return;
+      try {
+        currentSnapshot = changeSnapshotWithNewLog(migrator, currentSnapshot, log, index, gameState);
+      } catch {
+        inErroneousRound = true;
+        cleanData.InErrorGame = true;
+        return;
+      }
       currentSnapshot.calculateControllersPerRegion();
       if (currentSnapshot.gameSnapshot) {
         currentSnapshot.gameSnapshot.housesOnVictoryTrack = currentSnapshot.getVictoryTrack();
       }
       const extractedRoundData = ExtractedRoundDataFactory();
-      extractedRoundData.Round = findCorrespondingRound(index, gameRoundMapping).round;
       extractedRoundData.LogIndex = index;
       if (currentSnapshot.gameSnapshot) {
         currentSnapshot.gameSnapshot.housesOnVictoryTrack.forEach((house) => {
           const extractedHouseRef = extractedRoundData.HouseSnapshotData[house.id];
-          extractedHouseRef.CastleCount = house.victoryPoints;
+          extractedHouseRef.RoundEndCastleCount = house.victoryPoints;
           extractedHouseRef.LandAreaCount = house.landAreaCount;
           extractedHouseRef.PowerTokens = house.powerTokens;
           extractedHouseRef.SupplyTier = house.supply;
         });
+        extractedRoundData.IronThroneTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["Iron Throne"]);
+        extractedRoundData.FiefdomTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["Fiefdom"]);
+        extractedRoundData.KingsCourtThroneTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["King's Court"]);
+        extractedRoundData.Round = currentSnapshot.gameSnapshot.round;
       }
       currentSnapshot.worldSnapshot.forEach((region) => {
         if (region.order)
@@ -5987,6 +5992,8 @@
       });
       cleanData.Rounds.push(extractedRoundData);
     });
+    if (cleanData.InErrorGame)
+      alert("Snapshot Migrator failed at least once, please use data with caution!");
     return cleanData;
   };
 
@@ -5994,55 +6001,21 @@
   var extractGameData = (GameClient) => {
     const GameState = GameClient.entireGame.childGameState;
     const GameLogs = GameState.gameLogManager.logs;
-    const TurnMapping = extractGameTurnData(GameLogs);
     grabSnapshotConstructors(GameState);
     const extractedData = {};
-    const extractedLogData = extractLogData(GameLogs, [extractBidData, extractMilitaryData, extractTurnStateData], TurnMapping, GameState);
+    const extractedLogData = extractLogData(GameLogs, [extractBidData, extractMilitaryData, extractTurnStateData], GameState);
     const extractedMiscData = extractMiscData(GameClient, [extractPlayerData]);
     Object.assign(extractedData, extractedLogData);
     Object.assign(extractedData, extractedMiscData);
     return extractedData;
   };
-  var extractLogData = (logs, Extractors, gameRoundToLogIndex, gameState) => {
+  var extractLogData = (logs, Extractors, gameState) => {
     const logData = logs.map((log) => log.data);
     const finalObject = {};
     Extractors.forEach((trackerLambda) => {
-      Object.assign(finalObject, trackerLambda(logData, gameRoundToLogIndex, gameState));
+      Object.assign(finalObject, trackerLambda(logData, gameState));
     });
     return finalObject;
-  };
-  var extractGameTurnData = (logs) => {
-    const final = [];
-    logs.forEach((log, index) => {
-      if (log.data.type != "turn-begin")
-        return;
-      let orderRevealedIndex = index;
-      while (logs.length > orderRevealedIndex && logs[orderRevealedIndex]?.data.type != "orders-revealed")
-        orderRevealedIndex++;
-      if (logs.length == orderRevealedIndex) {
-        let orderRevealedIndex2 = index;
-        while (logs[orderRevealedIndex2]?.data.type != "orders-revealed")
-          orderRevealedIndex2--;
-      }
-      const orderRevealed = logs[orderRevealedIndex].data;
-      const ironTrack = orderRevealed.gameSnapshot?.ironThroneTrack ? orderRevealed.gameSnapshot?.ironThroneTrack : [];
-      const fiefdomTrack = orderRevealed.gameSnapshot?.fiefdomsTrack ? orderRevealed.gameSnapshot?.fiefdomsTrack : [];
-      const kingsCourtTrack = orderRevealed.gameSnapshot?.kingsCourtTrack ? orderRevealed.gameSnapshot?.kingsCourtTrack : [];
-      const victoryTrack = orderRevealed.gameSnapshot?.housesOnVictoryTrack ? orderRevealed.gameSnapshot?.housesOnVictoryTrack : [];
-      final.push({
-        index,
-        round: log.data.turn,
-        wildlingStrength: orderRevealed.gameSnapshot?.wildlingStrength,
-        dragonStrength: orderRevealed.gameSnapshot?.dragonStrength,
-        ironThroneTrack: ironTrack,
-        fiefdomsTrack: fiefdomTrack,
-        kingsCourtTrack,
-        housesOnVictoryTrack: victoryTrack,
-        vsbUsed: orderRevealed.gameSnapshot?.vsbUsed,
-        ironBank: orderRevealed.gameSnapshot?.ironBank
-      });
-    });
-    return final;
   };
   var extractMiscData = (GameClient, Extractors) => {
     const finalObject = {};
@@ -6068,7 +6041,8 @@
             try {
               console.log(`--- EXTRACTING GAME STATE FOR ${gameClient.entireGame?.name} ---`);
               const extractedData = extractGameData(gameClient);
-              DownloadData({ [gameClient.authData.gameId]: extractedData }, "GameOfThronesGameData");
+              const finalJSON = { [gameClient.authData.gameId]: extractedData };
+              DownloadData(finalJSON, "GameOfThronesGameData");
               console.log(`--- CAPTURED GAME STATE FOR ${gameClient.entireGame?.name} ---`);
               downloadedData = true;
             } catch (error) {

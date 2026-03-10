@@ -1937,7 +1937,7 @@ declare class EntireGameSnapshot {
   getHouse(id: string): IHouseSnapshot;
   getRegion(id: string): IRegionSnapshot;
   setOrderToRegion(regionId: string, orderType: string): void;
-  getInfluenceTrack(id: number): string[];
+  getInfluenceTrack(id: number): Factions[];
   removeUnits(units: [string, string[]][], house: string): void;
   changeSupply(house: string, delta: number, supplyRestrictions: number[][]): number;
   getVassalControlledByHouse(house: string): string;

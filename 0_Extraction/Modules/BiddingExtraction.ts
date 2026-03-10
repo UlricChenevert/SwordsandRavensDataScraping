@@ -1,6 +1,6 @@
+import { IGameLogDataExtractor, ExtractedBidData, CleanBiddingData, WildingTrackData } from "../../!Contracts/ExtractionContracts.js";
 import { tracksMapping } from "../Contracts/GameConstants.js";
 import { BidTracks, Factions, GameLogData } from "../Contracts/GameTypes.js";
-import { CleanBiddingData, ExtractedBidData, IGameLogDataExtractor, WildingTrackData } from "../../Contracts/ExtractionContracts.js";
 import { findCorrespondingRound } from "./GameRoundExtraction.js";
 
 export const extractBidData: IGameLogDataExtractor<ExtractedBidData> = (logData: GameLogData[], gameRoundMapping): ExtractedBidData => {
@@ -18,8 +18,7 @@ export const extractBidData: IGameLogDataExtractor<ExtractedBidData> = (logData:
                     Track: tracksMapping[log.trackerI] as BidTracks,
                     Amount: bidAmountInstance[0],
                     Faction: factionBidInstance as Factions,
-                    currentGameStateReferenceIndex: index,
-                    Round: findCorrespondingRound(index, gameRoundMapping).round
+                    currentGameStateReferenceIndex: index
                 });
             });
         });
@@ -37,7 +36,7 @@ export const extractBidData: IGameLogDataExtractor<ExtractedBidData> = (logData:
                 wildlingBids.push({
                     Amount: bidAmountInstance[0],
                     Faction: factionBidInstance as Factions,
-                    Round: findCorrespondingRound(index, gameRoundMapping).round
+                    currentGameStateReferenceIndex: index
                 });
             });
         });

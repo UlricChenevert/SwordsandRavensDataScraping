@@ -1,15 +1,18 @@
 // Coin / Power token, land size,
 
 import { EntireGameSnapshot, Factions, GameLogData, OrdersRevealed, SnapshotMigrator, UnitState } from "../Contracts/GameTypes.js";
-import { IGameLogDataExtractor } from "../../Contracts/ExtractionContracts.js"
+
 import { findCorrespondingRound } from "./GameRoundExtraction.js";
 import { ExtractedRoundData, ExtractedGameStateData } from "../Contracts/Contracts.js";
 import { ExtractedRoundDataFactory } from "../Utilities/ClassFactories.js";
 import { SnapshotMigratorConstructor, EntireGameSnapshotConstructor } from "../Utilities/GrabClassConstructors.js";
 import { changeSnapshotWithNewLog } from "../Utilities/ReplayManagerReimplementation.js";
+import { IGameLogDataExtractor } from "../../!Contracts/ExtractionContracts.js";
+import { InfluenceTracks, tracksMapping } from "../Contracts/GameConstants.js";
 
-export const extractTurnStateData : IGameLogDataExtractor<ExtractedGameStateData> = (logData: GameLogData[], gameRoundMapping, gameState) => {
-    const cleanData : ExtractedGameStateData = {Rounds: []}
+export const extractTurnStateData : IGameLogDataExtractor<ExtractedGameStateData> = (logData: GameLogData[], gameState) => {
+    const cleanData : ExtractedGameStateData = {Rounds: [], InErrorGame : false}
+    let inErroneousRound = false
 
     let migrator : SnapshotMigrator = new SnapshotMigratorConstructor(gameState);
     
@@ -25,10 +28,20 @@ export const extractTurnStateData : IGameLogDataExtractor<ExtractedGameStateData
     logData.forEach((log, index)=>{
         // Cannot get data before the first order revealed, because that can throw off migrator state
         if (index < startingIndex) return 
+        
         if (log.type === "orders-revealed") {
-                migrator = new SnapshotMigratorConstructor(gameState);
-        }        
-        currentSnapshot = changeSnapshotWithNewLog(migrator, currentSnapshot, log, index, gameState)
+            migrator = new SnapshotMigratorConstructor(gameState);
+            inErroneousRound = false
+        }     
+        if (inErroneousRound) return // Reset the round state
+
+        try {
+            currentSnapshot = changeSnapshotWithNewLog(migrator, currentSnapshot, log, index, gameState)
+        } catch {
+            inErroneousRound = true
+            cleanData.InErrorGame = true
+            return
+        }
 
         currentSnapshot.calculateControllersPerRegion();
         if (currentSnapshot.gameSnapshot) {
@@ -38,18 +51,23 @@ export const extractTurnStateData : IGameLogDataExtractor<ExtractedGameStateData
         
         const extractedRoundData : ExtractedRoundData = ExtractedRoundDataFactory()
 
-        extractedRoundData.Round = findCorrespondingRound(index, gameRoundMapping).round
         extractedRoundData.LogIndex = index
         
         if (currentSnapshot.gameSnapshot) {
             currentSnapshot.gameSnapshot.housesOnVictoryTrack.forEach((house)=>{
                 const extractedHouseRef = extractedRoundData.HouseSnapshotData[house.id]
                 
-                extractedHouseRef.CastleCount = house.victoryPoints
+                extractedHouseRef.RoundEndCastleCount = house.victoryPoints
                 extractedHouseRef.LandAreaCount = house.landAreaCount
                 extractedHouseRef.PowerTokens = house.powerTokens
                 extractedHouseRef.SupplyTier = house.supply
+                
             })
+
+            extractedRoundData.IronThroneTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["Iron Throne"])
+            extractedRoundData.FiefdomTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["Fiefdom"])
+            extractedRoundData.KingsCourtThroneTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["King's Court"])
+            extractedRoundData.Round = currentSnapshot.gameSnapshot.round
         }
         
         currentSnapshot.worldSnapshot.forEach((region)=>{
@@ -69,6 +87,9 @@ export const extractTurnStateData : IGameLogDataExtractor<ExtractedGameStateData
 
         cleanData.Rounds.push(extractedRoundData)
     })
+
+    if (cleanData.InErrorGame)
+        alert("Snapshot Migrator failed at least once, please use data with caution!")
 
     return cleanData
 }

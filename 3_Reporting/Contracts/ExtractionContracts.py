@@ -50,7 +50,6 @@ class _BattleParticipantLogRequired(TypedDict):
     HouseCard: Optional[HouseCard]
     HouseCardStrength: int
     currentGameStateReferenceIndex: int
-    FiefdomTrackPosition: int
     ValyrianSteelBlade: int
     Total: int
 
@@ -70,13 +69,13 @@ class CombatLog(TypedDict):
     BattleData: BattleLog
     LoserData: BattleParticipantLog
     WinnerData: BattleParticipantLog
-    round: int
+    CorrespondingTurnIndex: int
 
 
 class WildingTrackData(TypedDict):
     Amount: int
     Faction: Factions
-    Round: int
+    currentGameStateReferenceIndex: int
 
 
 class UnitState(TypedDict):
@@ -89,7 +88,7 @@ class CleanHouseSnapshot(TypedDict):
     SupplyTier: int
     PowerTokens: int
     LandAreas: List[GameLocation]
-    CastleCount: int
+    RoundEndCastleCount: int
     LandAreaCount: int
 
 
@@ -97,15 +96,17 @@ class ExtractedRoundData(TypedDict):
     HouseSnapshotData: Dict[str, CleanHouseSnapshot]
     OrderTokenChoices: Dict[GameLocation, str]
     UnitLocationSnapshotData: Dict[GameLocation, List[UnitState]]
-    Round: int
+    IronThroneTrack: List[str]
+    FiefdomTrack: List[str]
+    KingsCourtThroneTrack: List[str]
+    InErrorGame: bool
     LogIndex: int
-
+    Round: int
 
 class CleanBiddingData(TypedDict):
     Track: BidTracks
     Amount: int
     Faction: Factions
-    Round: int
     currentGameStateReferenceIndex: int
 
 
@@ -117,13 +118,12 @@ class ScrapedGameEntry(TypedDict):
     """All data extracted for a single game instance.
 
     Mirrors the TypeScript intersection:
-        PlayerExtraction & ExtractedMilitaryData & ExtractedBidData & ExtractedGameStateData
+        PlayerExtraction & ExtractedMilitaryData & ExtractedBidData
     """
     Players: List[PlayerInfo]
     combatLogs: List[CombatLog]
     TrackBids: List[CleanBiddingData]
     WildlingBids: List[WildingTrackData]
-    Rounds: List[ExtractedRoundData]
 
 
 # Keyed by game ID string — mirrors: type ScrapedData = { [key: string]: ... }

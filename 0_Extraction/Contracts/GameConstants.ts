@@ -22,6 +22,12 @@ export const tracksMapping: { [key: number]: BidTracks } = {
     2: "King's Court",
 };
 
+export enum InfluenceTracks {
+  "Iron Throne",
+  "Fiefdom",
+  "King's Court",
+}
+
 export enum ConnectionState {
   INITIALIZING = 0,
   CONNECTING = 1,

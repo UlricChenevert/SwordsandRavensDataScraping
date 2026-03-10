@@ -1,10 +1,11 @@
 // Coin / Power token, land size,
-import { findCorrespondingRound } from "./GameRoundExtraction.js";
 import { ExtractedRoundDataFactory } from "../Utilities/ClassFactories.js";
 import { SnapshotMigratorConstructor, EntireGameSnapshotConstructor } from "../Utilities/GrabClassConstructors.js";
 import { changeSnapshotWithNewLog } from "../Utilities/ReplayManagerReimplementation.js";
-export const extractTurnStateData = (logData, gameRoundMapping, gameState) => {
-    const cleanData = { Rounds: [] };
+import { InfluenceTracks } from "../Contracts/GameConstants.js";
+export const extractTurnStateData = (logData, gameState) => {
+    const cleanData = { Rounds: [], InErrorGame: false };
+    let inErroneousRound = false;
     let migrator = new SnapshotMigratorConstructor(gameState);
     let startingIndex = 0;
     const setupLog = logData.find((l, index) => { startingIndex = index; return l.type === "orders-revealed"; });
@@ -20,24 +21,37 @@ export const extractTurnStateData = (logData, gameRoundMapping, gameState) => {
             return;
         if (log.type === "orders-revealed") {
             migrator = new SnapshotMigratorConstructor(gameState);
+            inErroneousRound = false;
         }
-        currentSnapshot = changeSnapshotWithNewLog(migrator, currentSnapshot, log, index, gameState);
+        if (inErroneousRound)
+            return; // Reset the round state
+        try {
+            currentSnapshot = changeSnapshotWithNewLog(migrator, currentSnapshot, log, index, gameState);
+        }
+        catch {
+            inErroneousRound = true;
+            cleanData.InErrorGame = true;
+            return;
+        }
         currentSnapshot.calculateControllersPerRegion();
         if (currentSnapshot.gameSnapshot) {
             // Refresh the victory track data so house stats are current
             currentSnapshot.gameSnapshot.housesOnVictoryTrack = currentSnapshot.getVictoryTrack();
         }
         const extractedRoundData = ExtractedRoundDataFactory();
-        extractedRoundData.Round = findCorrespondingRound(index, gameRoundMapping).round;
         extractedRoundData.LogIndex = index;
         if (currentSnapshot.gameSnapshot) {
             currentSnapshot.gameSnapshot.housesOnVictoryTrack.forEach((house) => {
                 const extractedHouseRef = extractedRoundData.HouseSnapshotData[house.id];
-                extractedHouseRef.CastleCount = house.victoryPoints;
+                extractedHouseRef.RoundEndCastleCount = house.victoryPoints;
                 extractedHouseRef.LandAreaCount = house.landAreaCount;
                 extractedHouseRef.PowerTokens = house.powerTokens;
                 extractedHouseRef.SupplyTier = house.supply;
             });
+            extractedRoundData.IronThroneTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["Iron Throne"]);
+            extractedRoundData.FiefdomTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["Fiefdom"]);
+            extractedRoundData.KingsCourtThroneTrack = currentSnapshot.getInfluenceTrack(InfluenceTracks["King's Court"]);
+            extractedRoundData.Round = currentSnapshot.gameSnapshot.round;
         }
         currentSnapshot.worldSnapshot.forEach((region) => {
             if (region.order)
@@ -52,5 +66,7 @@ export const extractTurnStateData = (logData, gameRoundMapping, gameState) => {
         });
         cleanData.Rounds.push(extractedRoundData);
     });
+    if (cleanData.InErrorGame)
+        alert("Snapshot Migrator failed at least once, please use data with caution!");
     return cleanData;
 };

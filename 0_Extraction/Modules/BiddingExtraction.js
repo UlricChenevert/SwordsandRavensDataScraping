@@ -1,5 +1,4 @@
 import { tracksMapping } from "../Contracts/GameConstants.js";
-import { findCorrespondingRound } from "./GameRoundExtraction.js";
 export const extractBidData = (logData, gameRoundMapping) => {
     // I am not filtering and then mapping because I need to preserve the log's index to map it's round
     const trackBids = [];
@@ -13,8 +12,7 @@ export const extractBidData = (logData, gameRoundMapping) => {
                     Track: tracksMapping[log.trackerI],
                     Amount: bidAmountInstance[0],
                     Faction: factionBidInstance,
-                    currentGameStateReferenceIndex: index,
-                    Round: findCorrespondingRound(index, gameRoundMapping).round
+                    currentGameStateReferenceIndex: index
                 });
             });
         });
@@ -29,7 +27,7 @@ export const extractBidData = (logData, gameRoundMapping) => {
                 wildlingBids.push({
                     Amount: bidAmountInstance[0],
                     Faction: factionBidInstance,
-                    Round: findCorrespondingRound(index, gameRoundMapping).round
+                    currentGameStateReferenceIndex: index
                 });
             });
         });
