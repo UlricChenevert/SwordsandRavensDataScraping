@@ -10,7 +10,7 @@
         "package.json": true,
         "tsconfig.json": true,
         ".claude": true,
-        ".venv": true,
+        // ".venv": true,
         // ".Legacy":true,
 
         "**/__pycache__":true,
