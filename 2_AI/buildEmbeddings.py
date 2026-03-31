@@ -11,15 +11,9 @@ databaseService = Chroma(persist_directory=DB_PATH, embedding_function=embedding
 #     results = databaseService.similarity_search("armies defeated", k=10, filter={"type": "combat_log"})
 
 from Utilities.LoadJSONData import loadScrappedData
-from Contracts.ExtractionContracts import PlayerInfo
+from Contracts.ExtractionContracts import BattleLog, BattleParticipantLog, CombatLog, PlayerInfo
+from Utilities.ConvertExtractedJSONToString import convertPlayerToPlainText
 
-def convertPlayerToPlainText(players: List[PlayerInfo]):
-    final = "Players: "
-
-    for player in players:
-        final += player["playerName"] + " "
-
-    return final
 
 async def main():
     games = await loadScrappedData(2)
