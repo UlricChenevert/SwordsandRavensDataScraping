@@ -174,10 +174,12 @@ class ScrapedGameEntry(TypedDict):
     """
     Players: List[PlayerInfo] 
     Settings: GameSettings
+    Rounds: List[ExtractedRoundData]
+    
     combatLogs: List[CombatLog]
     TrackBids: List[CleanBiddingData]
     WildlingBids: List[WildingTrackData]
-    Rounds: List[ExtractedRoundData]
+    
     InErrorGame: bool
 
 
