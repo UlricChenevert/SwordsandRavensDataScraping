@@ -80,7 +80,8 @@ export const possibleFactions : Factions[] = [
   "greyjoy",
   "targaryen",
   "martell",
-  "stark"
+  "stark",
+  "bolton"
 ] as const;
 
 export const defaultUserSettings = {

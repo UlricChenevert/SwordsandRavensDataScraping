@@ -11,6 +11,7 @@ from Configuration.Colors import ALL_FACTIONS, FACTION_COLORS, TRACKS
 class _PlotAxes(Protocol):
     def bar(self, x: Any, height: Any, width: Any = ..., **kwargs: Any) -> Any: ...
     def plot(self, *args: Any, **kwargs: Any) -> Any: ...
+    def errorbar(self, x: Any, y: Any, **kwargs: Any) -> Any: ...
     def set_title(self, label: str, **kwargs: Any) -> Any: ...
     def set_xlabel(self, xlabel: str, **kwargs: Any) -> Any: ...
     def set_ylabel(self, ylabel: str, **kwargs: Any) -> Any: ...
@@ -62,11 +63,16 @@ def _plot_bid_by_position(ax: _PlotAxes, games: List[ScrapedGameEntry], track: s
     positions = list(range(1, 9))
     x = np.arange(len(positions))
     means: list[float] = [float(np.mean(position_amounts[pos])) if position_amounts[pos] else 0.0 for pos in positions]
+    stds: list[float] = [float(np.std(position_amounts[pos])) if len(position_amounts[pos]) > 1 else 0.0 for pos in positions]
 
-    ax.bar(x, means, 0.6, color="steelblue", alpha=0.85, edgecolor="white", linewidth=0.4)
+    # Clip lower error arm so bars never go below 0
+    yerr_lower = [min(s, m) for m, s in zip(means, stds)]
+    ax.bar(x, means, 0.6, color="steelblue", alpha=0.85, edgecolor="white", linewidth=0.4,
+           yerr=[yerr_lower, stds], capsize=4,
+           error_kw={"elinewidth": 1.2, "ecolor": "black", "alpha": 0.6})
     ax.set_title(f"{track}  (n = {n_events} bid events)")
     ax.set_xlabel("Track Position")
-    ax.set_ylabel("Power Tokens Bid (mean)")
+    ax.set_ylabel("Power Tokens Bid (mean ± 1 SD)")
     ax.set_xticks(x)
     ax.set_xticklabels([f"#{p}" for p in positions])
 
@@ -96,8 +102,15 @@ def _plot_faction_stat(ax: _PlotAxes, games: List[ScrapedGameEntry], field: str,
         data = faction_round_values[faction]
         rounds = sorted(data)
         means = [float(np.mean(data[r])) for r in rounds]
-        ax.plot(rounds, means, label=faction, color=FACTION_COLORS[faction],
-                linewidth=1.8, marker="o", markersize=3)
+        stds = [float(np.std(data[r])) if len(data[r]) > 1 else 0.0 for r in rounds]
+        color = FACTION_COLORS[faction]
+        ax.errorbar(
+            rounds, means,
+            yerr=stds,
+            label=faction, color=color,
+            linewidth=1.8, marker="o", markersize=3,
+            capsize=3, capthick=1.0, elinewidth=0.8, alpha=0.85,
+        )
 
     ax.set_title(f"{title}  (n = {len(games)} games)")
     ax.set_xlabel("Round")
