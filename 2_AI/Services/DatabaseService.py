@@ -1,7 +1,7 @@
 from langchain_community.vectorstores import Chroma
 from Configuration.Constants import DB_PATH, DOCUMENT_RETRIEVAL_AMOUNT
 
-from EmbeddingsService import embeddings
+from Services.EmbeddingsService import embeddings
 
 chromaDatabaseConnection = Chroma(
     persist_directory=DB_PATH, 

@@ -19,6 +19,7 @@ def RemoveRedundantData(data: list[ScrapedData]) -> list[ScrapedGameEntry]:
         for key in scrappedData.keys():
             if key not in usedKeys:
                 usedKeys.add(key)
+                scrappedData[key]["GameID"] = key
                 uniqueData.append(scrappedData[key])
 
     return uniqueData

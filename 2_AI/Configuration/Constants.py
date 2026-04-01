@@ -14,6 +14,7 @@ DOCUMENT_RETRIEVAL_AMOUNT = 5
 
 DB_PATH = "./game_rules_db"
 EXTRACTED_DATA_PATH="../0_Extraction/Data"
+RULES_DATA_PATH = "./2_AI/Data/rules.md"
 
 EMBEDDINGS_MODEL_NAME = "all-mpnet-base-v2"
 

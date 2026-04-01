@@ -39,6 +39,13 @@
       "request": "launch",
       "program": "2_AI/Server.py",
       "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Python Embedding Preprocessing",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "2_AI/PreprocessEmbeddings.py",
+      "console": "integratedTerminal"
     }
   ]
 }

@@ -172,6 +172,8 @@ class ScrapedGameEntry(TypedDict):
     Mirrors the TypeScript intersection:
         PlayerExtraction & ExtractedMilitaryData & ExtractedBidData
     """
+    GameID: str #Not in typescript definition
+
     Players: List[PlayerInfo] 
     Settings: GameSettings
     Rounds: List[ExtractedRoundData]
