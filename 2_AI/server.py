@@ -12,12 +12,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-from Configuration.Constants import HOST_IP, PORT, TEMPLATE
+from Configuration.Constants import HOST_IP, PORT, RAG_TEMPLATE
 
 from Utilities.General import combineTextFragments
 
 from Services.LLMService import llmService
-from Services.DatabaseService import databaseRetrieverService
+from Services.DatabaseService import combatRetrieverService, ruleRetrieverService, wildlingBidRetrieverService, trackBidRetrieverService
 
 app = FastAPI()
 
@@ -25,20 +25,32 @@ load_dotenv()
 
 
 @app.get("/")
-def home(query: str):
+def home(query: str, aitype: str, phase: str):
 
-    promptTemplate = ChatPromptTemplate.from_template(TEMPLATE)
+    if aitype == "rag":
+        promptTemplate = ChatPromptTemplate.from_template(RAG_TEMPLATE)
+    else:
+        promptTemplate = ChatPromptTemplate.from_template(RAG_TEMPLATE)
+    
+    template_phases = {
+        "combat" : "Combat",
+        "wildling" : "Wildling Bidding",
+        "trackbid" : "Track Bid"
+    }
 
-    rag_chain = (
-        {"context": databaseRetrieverService | combineTextFragments, "question": RunnablePassthrough()}
-        | promptTemplate
-        | llmService.invoke
-        | StrOutputParser()
-    )
-        
-    response = rag_chain.invoke(query)
-    return {"response": response}
+    rules = combineTextFragments(ruleRetrieverService.invoke(query))
+    prompt = promptTemplate.format_messages(rules=rules, question=query, phase=template_phases[phase])
+    llm_response = llmService.invoke(prompt)
+
+    return {"response": llm_response.content}
 
 if __name__ == "__main__":
-    #print(rag_chain.invoke("What do I do at the beginning of my turn?"))
+    '''
+    query= "How much should I bid on each track on the first turn playing as stark?"
+    promptTemplate = ChatPromptTemplate.from_template(RAG_TEMPLATE)
+    rules = combineTextFragments(ruleRetrieverService.invoke(query))
+    prompt = promptTemplate.format_messages(rules=rules, question=query)
+    llm_response = llmService.invoke(prompt)
+    '''
+    
     uvicorn.run(app, host=HOST_IP, port=PORT)
