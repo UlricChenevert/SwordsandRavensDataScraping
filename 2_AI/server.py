@@ -18,7 +18,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from operator import itemgetter
 
-from Configuration.Constants import GITHUB_ISSUES_URL, HOST_IP, PORT, TEMPLATE, USAGE_LIMIT
+from Configuration.Constants import GITHUB_ISSUES_URL, HOST_IP, PORT, RAG_TEMPLATE, USAGE_LIMIT, ZERO_SHOT_TEMPLATE
 
 from Utilities.General import combineTextFragments
 from Utilities.ConvertExtractedJSONToString import (
@@ -28,7 +28,7 @@ from Utilities.ConvertExtractedJSONToString import (
     convertWildlingBidListToPlainText,
     convertCombatToPlainText,
 )
-from Contracts.RequestContracts import GameContext
+from Contracts.RequestContracts import AIRetrievalType, GameContext
 
 def buildGameStateString(context: GameContext) -> str:
     parts = [
@@ -44,7 +44,7 @@ def buildGameStateString(context: GameContext) -> str:
     return "\n\n".join(parts)
 
 from Services.LLMService import llmService
-from Services.DatabaseService import databaseRetrieverService
+from Services.DatabaseService import combatRetrieverService, ruleRetrieverService, wildlingBidRetrieverService, trackBidRetrieverService
 from Contracts.RequestContracts import PromptRequest 
 from Contracts.ResponseContracts import GeneralResponse, PromptResponse, ResponseMetaData
 import traceback
@@ -63,14 +63,17 @@ load_dotenv()
 def home(request: Request, body: PromptRequest) -> GeneralResponse[PromptResponse]:
     try:
         llm = ChatGoogleGenerativeAI(model=body.model, temperature=0, google_api_key=body.geminiKey, max_retries=0)
+        
+        if body.aiRetrievalType == AIRetrievalType.RAG:
+            promptTemplate = ChatPromptTemplate.from_template(RAG_TEMPLATE)
+        else:
+            promptTemplate = ChatPromptTemplate.from_template(ZERO_SHOT_TEMPLATE)
 
-        promptTemplate = ChatPromptTemplate.from_template(TEMPLATE)
-
-        body.aiRetrievalType
+        
 
         rag_chain = (
             {
-                "context": itemgetter("question") | databaseRetrieverService | combineTextFragments,
+                "context": itemgetter("question") | ruleRetrieverService | combineTextFragments,
                 "game_state": itemgetter("game_state"),
                 "question": itemgetter("question")
             }
@@ -109,5 +112,12 @@ def home(request: Request, body: PromptRequest) -> GeneralResponse[PromptRespons
             )
 
 if __name__ == "__main__":
-    #print(rag_chain.invoke("What do I do at the beginning of my turn?"))
+    '''
+    query= "How much should I bid on each track on the first turn playing as stark?"
+    promptTemplate = ChatPromptTemplate.from_template(RAG_TEMPLATE)
+    rules = combineTextFragments(ruleRetrieverService.invoke(query))
+    prompt = promptTemplate.format_messages(rules=rules, question=query)
+    llm_response = llmService.invoke(prompt)
+    '''
+    
     uvicorn.run(app, host=HOST_IP, port=PORT)

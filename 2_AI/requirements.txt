@@ -14,5 +14,6 @@ langchain
 langchain-classic
 langchain_core
 aiofiles
+requests
 slowapi
 sentence-transformers
