@@ -1,6 +1,7 @@
 {
     "files.exclude": {
         ".gitignore": true,
+        ".gitmodules": true,
         "**/.DS_Store": true,
         "**/.git": true,
         "**/*.js.map": true,
@@ -10,12 +11,12 @@
         "package.json": true,
         "tsconfig.json": true,
         ".claude": true,
-        // ".venv": true,
-        // ".Legacy":true,
+        ".venv": true,
+        ".Legacy":true,
 
         "**/__pycache__":true,
         "**/__init__.py":true,
-        // "**/*.d.ts": { "when": "$(basename).ts" },
+        "**/*.d.ts": { "when": "$(basename).ts" },
     },
     "explorer.fileNesting.enabled": true,
     // "explorer.fileNesting.patterns": {

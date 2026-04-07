@@ -2,7 +2,6 @@ TEMPLATE = """
 You are an expert at a board game called Sword and Ravens. Below are snippets from the official rulebook
 and the player's current situation. 
 
-RULES:
 {context}
 
 SITUATION:
@@ -20,4 +19,8 @@ EMBEDDINGS_MODEL_NAME = "all-mpnet-base-v2"
 
 HOST_IP="127.0.0.1"
 
-PORT=8000
+GITHUB_ISSUES_URL = "https://github.com/UlricChenevert/SwordsandRavensAIAssistant/issues"
+
+PORT=5002
+
+USAGE_LIMIT = "10/minute"

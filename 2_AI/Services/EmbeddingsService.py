@@ -1,5 +1,5 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from Configuration.Constants import EMBEDDINGS_MODEL_NAME
 
-
-embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+embeddings = HuggingFaceEmbeddings(model_name=EMBEDDINGS_MODEL_NAME)
 
